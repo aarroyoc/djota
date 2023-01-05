@@ -20,5 +20,7 @@ test(paragraph) :-
     djota:djot("Hello friends\nof [YouTube](https://youtube.com)", "<p>Hello friends of <a href=\"https://youtube.com\">YouTube</a></p>"),
     djota:djot("Hello Prolog!\n\nHello Djot!\n\n", "<p>Hello Prolog!</p><p>Hello Djot!</p>").
 
+test(thematic_break) :-
+    djota:djot("Then they went to sleep.\n\n  * * * *  \n\nWhen they woke up, ...", "<p>Then they went to sleep.</p><hr><p>When they woke up, ...</p>").
 
 :- end_object.

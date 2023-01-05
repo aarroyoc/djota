@@ -19,6 +19,10 @@ djot(Djot, Html) :-
 %% djot_([], Html, Html).
 
 djot_([Line|Lines]) -->
+    { Line \= "" },
+    djot_thematic_break_([Line|Lines]).
+djot_([Line|Lines]) -->
+    { Line \= "" },
     djot_paragraph_([Line|Lines], "").
 djot_([[]|Lines]) -->
     djot_(Lines).
@@ -44,6 +48,23 @@ djot_paragraph_([""|Lines], Paragraph) -->
 
 djot_paragraph_([], Paragraph) -->
     djot_paragraph_([""], Paragraph).
+
+djot_thematic_break_([Line|Lines]) -->
+    { phrase(thematic_break_line(0), Line) },
+    "<hr>",
+    djot_(Lines).
+
+thematic_break_line(N) -->
+    (" "|"\t"),
+    thematic_break_line(N).
+
+thematic_break_line(N0) -->
+    "*",
+    { N is N0 + 1},
+    thematic_break_line(N).
+
+thematic_break_line(N) -->
+    { N >= 3 }.
 
 char(X) -->
     [X],
