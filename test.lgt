@@ -16,6 +16,9 @@ test(image) :-
     phrase(djota:inline_text("<img alt=\"picture of a cat\" src=\"feline.jpg\">", [ref("cat", "feline.jpg")]), "![picture of a cat][cat]"),
     phrase(djota:inline_text("<img alt=\"cat\" src=\"feline.jpg\">", [ref("cat", "feline.jpg")]), "![cat][]").
 
+test(paragraph) :-
+    djota:djot("Hello friends\nof [YouTube](https://youtube.com)", "<p>Hello friends of <a href=\"https://youtube.com\">YouTube</a></p>"),
+    djota:djot("Hello Prolog!\n\nHello Djot!\n\n", "<p>Hello Prolog!</p><p>Hello Djot!</p>").
 
 
 :- end_object.

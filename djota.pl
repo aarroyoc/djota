@@ -1,10 +1,81 @@
-:- module(djota, [inline_text//2]).
+:- module(djota, [djot/2, inline_text//2]).
 
 :- use_module(library(format)).
 :- use_module(library(dcgs)).
 :- use_module(library(pio)).
 :- use_module(library(lists)).
 
+% Block syntax
+
+djot(Djot, Html) :-
+    once(phrase(lines(Lines), Djot)),
+    phrase(djot_(Lines), Html).
+
+%% djot_([Line|Lines], Html0, Html) :-
+%%     djot_paragraph_([Line|Lines], Html0, Html).
+%% djot_([Line|Lines], Html0, Html) :-
+%%     Line = [],
+%%     djot_(Lines, Html0, Html).
+%% djot_([], Html, Html).
+
+djot_([Line|Lines]) -->
+    djot_paragraph_([Line|Lines], "").
+djot_([[]|Lines]) -->
+    djot_(Lines).
+djot_([]) --> [].
+
+djot_paragraph_([Line|Lines], Paragraph0) -->
+    {
+	Line \= "",
+	(
+	    Paragraph0 = "" ->
+	    Line = Paragraph1
+	;   append(Paragraph0, [' '|Line], Paragraph1)
+	)
+    },
+    djot_paragraph_(Lines, Paragraph1).
+
+djot_paragraph_([""|Lines], Paragraph) -->
+    { phrase(inline_text(Html, []), Paragraph) },
+    "<p>",
+    Html,
+    "</p>",
+    djot_(Lines).
+
+djot_paragraph_([], Paragraph) -->
+    djot_paragraph_([""], Paragraph).
+
+char(X) -->
+    [X],
+    {
+	\+ member(X, "\n\r")
+    }.
+line_ending --> "\n" | "\r" | "\r\n".
+
+line_chars([X|Xs]) -->
+    char(X),
+    line_chars(Xs).
+line_chars([X]) --> char(X).
+
+line([X|Xs]) -->
+    char(X),
+    line(Xs).
+
+line([]) --> line_ending.
+
+lines([X|Xs]) -->
+    line(X),
+    lines(Xs).
+
+lines([X]) -->
+    line_chars(X),
+    file_ending.
+
+file_ending --> [].
+file_ending --> line_ending.
+file_ending --> line_ending, file_ending.
+
+% Inline syntax
 inline_text(Text, Data) -->
     reference_image(Text, Data).
 inline_text(Text, Data) -->
