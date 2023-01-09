@@ -1,4 +1,4 @@
-:- module(djota, [djot/2, djot_ast/2, inline_text//2]).
+:- module(djota, [djot/2, djot_ast/2, inline_text_ast/2]).
 
 :- use_module(library(format)).
 :- use_module(library(dcgs)).
@@ -89,8 +89,8 @@ djot_paragraph_ast_([Line|Lines], Paragraph0) -->
     djot_paragraph_ast_(Lines, Paragraph1).
 
 djot_paragraph_ast_([""|Lines], Paragraph) -->
-    { phrase(inline_text(Html, []), Paragraph) },
-    [paragraph(Html)],
+    { phrase(inline_text_ast_(InlineAst), Paragraph) },
+    [paragraph(InlineAst)],
     djot_ast_(Lines).
 
 djot_paragraph_ast_([], Paragraph) -->
@@ -117,11 +117,19 @@ ast_html_([X|Xs]) -->
 
 ast_html_node_(thematic_break) -->
     "<hr>".
-ast_html_node_(paragraph(Html)) -->
-    "<p>",Html,"</p>".
+ast_html_node_(paragraph(InlineAst)) -->
+    "<p>",
+    ast_html_(InlineAst),
+    "</p>".
 ast_html_node_(section(N, Header, Child)) -->
     { phrase(ast_html_(Child), ChildHtml) },
     format_("<section><h~d>~s</h~d>~s</section>", [N, Header, N, ChildHtml]).
+ast_html_node_(link(Name, Url)) -->
+    format_("<a href=\"~s\">~s</a>", [Url, Name]).
+ast_html_node_(image(AltText, Url)) -->
+    format_("<img alt=\"~s\" src=\"~s\">", [AltText, Url]).
+ast_html_node_(str(Str)) -->
+    Str.
 
 char(X) -->
     [X],
@@ -153,97 +161,96 @@ file_ending --> [].
 file_ending --> line_ending.
 file_ending --> line_ending, file_ending.
 
-% Inline syntax
-inline_text(Text, Data) -->
-    reference_image(Text, Data).
-inline_text(Text, Data) -->
-    inline_image(Text, Data).
-inline_text(Text, Data) -->
-    reference_link(Text, Data).
-inline_text(Text, Data) -->
-    inline_link(Text, Data).
-inline_text(Text, Data) -->
-    backslash(Text, Data).
-inline_text(Text, Data) -->
-    ordinary_text(Text, Data).
-inline_text([], _) -->
+% Inline syntax AST
+inline_text_ast(Text, Ast) :-
+    once(phrase(inline_text_ast_(Ast), Text)).
+
+inline_text_ast_(Ast) -->
+    reference_image_ast_(Ast).
+inline_text_ast_(Ast) -->
+    inline_image_ast_(Ast).
+inline_text_ast_(Ast) -->
+    reference_link_ast_(Ast).
+inline_text_ast_(Ast) -->
+    inline_link_ast_(Ast).
+inline_text_ast_(Ast) -->
+    str_ast_(Ast).
+inline_text_ast_([]) -->
     [].
 
-reference_image(Text, Data) -->
+reference_image_ast_([Node|Ast0]) -->
     "![",
-    inline_text(AltText, Data),
+    seq(AltText),
     "][",
     seq(RefName),
     "]",
-    inline_text(Text1, Data),
+    inline_text_ast_(Ast0),
     {
-	( RefName \= "" ->
-	  (
-	      member(ref(RefName, LinkUrl), Data) ->
-	      phrase(format_("<img alt=\"~s\" src=\"~s\">", [AltText, LinkUrl]), Text0)
-	  ;   phrase(format_("<img alt=\"~s\">", [AltText]), Text0) 
-	  )
-	; (
-	      member(ref(AltText, LinkUrl), Data) ->
-	      phrase(format_("<img alt=\"~s\" src=\"~s\">", [AltText, LinkUrl]), Text0)
-	  ;   phrase(format_("<img alt=\"~s\">", [AltText]), Text0)
-	  )
-	),
-	append(Text0, Text1, Text)
+	( RefName = "" ->
+	  Node = image_ref(AltText)
+	; Node = image_ref(AltText, RefName)
+	)
     }.
 
-inline_image(Text, Data) -->
+inline_image_ast_([image(AltText, Url)|Ast0]) -->
     "![",
-    inline_text(AltText, Data),
+    seq(AltText),
     "](",
     seq(Url),
     ")",
-    inline_text(Text1, Data),
-    {
-	phrase(format_("<img alt=\"~s\" src=\"~s\">", [AltText, Url]), Text0),
-	append(Text0, Text1, Text)
-    }.
+    inline_text_ast_(Ast0).
 
-reference_link(Text, Data) -->
+reference_link_ast_([Node|Ast0]) -->
     "[",
-    inline_text(LinkText, Data),
+    seq(LinkText),
     "][",
     seq(RefName),
     "]",
-    inline_text(Text1, Data),
+    inline_text_ast_(Ast0),
     {
-	( RefName \= "" ->
-	  (
-	      member(ref(RefName, LinkUrl), Data) ->
-	      phrase(format_("<a href=\"~s\">~s</a>", [LinkUrl, LinkText]), Text0)
-	  ;   phrase(format_("<a>~s</a>", [LinkText]), Text0) 
-	  )
-	; (
-	      member(ref(LinkText, LinkUrl), Data) ->
-	      phrase(format_("<a href=\"~s\">~s</a>", [LinkUrl, LinkText]), Text0)
-	  ;   phrase(format_("<a>~s</a>", [LinkText]), Text0)
-	  )
-	),
-	append(Text0, Text1, Text)
+	( RefName = "" ->
+	  Node = link_ref(LinkText)
+	; Node = link_ref(LinkText, RefName)
+	)
     }.
 
-inline_link(Text, Data) -->
+inline_link_ast_([link(LinkText, LinkUrl)|Ast0]) -->
     "[",
-    inline_text(LinkText, Data),
+    seq(LinkText),
     "](",
     seq(LinkUrl),
     ")",
-    inline_text(Text1, Data),
-    {
-	phrase(format_("<a href=\"~s\">~s</a>", [LinkUrl, LinkText]), Text0),
-	append(Text0, Text1, Text)
-    }.
+    inline_text_ast_(Ast0).
 
-backslash([Char|Text], Data) -->
+str_ast_(Ast) -->
     "\\",
     [Char],
-    inline_text(Text, Data).
+    inline_text_ast_([PrevNode|Ast1]),
+    {
+	(
+	    PrevNode = str(Str) ->
+	    Ast = [str([Char|Str])|Ast1]
+	;   Ast = [str([Char]),PrevNode|Ast1]
+	)
+    }.
 
-ordinary_text([Char|Text], Data) -->
+str_ast_([str([Char])]) -->
+    "\\",
     [Char],
-    inline_text(Text, Data).
+    inline_text_ast_([]).
+
+str_ast_(Ast) -->
+    [Char],
+    inline_text_ast_([PrevNode|Ast1]),
+    {
+	(
+	    PrevNode = str(Str) ->
+	    Ast = [str([Char|Str])|Ast1]
+	;   Ast = [str([Char]),PrevNode|Ast1]
+	)
+    }.
+
+str_ast_([str([Char])]) -->
+    [Char],
+    inline_text_ast_([]).
+

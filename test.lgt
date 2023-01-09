@@ -2,19 +2,25 @@
 
 :- object(test, extends(lgtunit)).
 
+test(backslash_ast) :-
+    djota:inline_text_ast("Hello \\* Djota", [str("Hello * Djota")]).
+
 test(backslash) :-
-    phrase(djota:inline_text("Hello * Djota", []), "Hello \\* Djota").
+    djota:djot("Hello \\* Djota", "<p>Hello * Djota</p>").
+
+test(link_ast) :-
+    djota:inline_text_ast("My link [link](http://example.com) hola", [str("My link "),link("link","http://example.com"),str(" hola")]),
+    djota:inline_text_ast("[My link text][foo bar]", [link_ref("My link text","foo bar")]).
 
 test(link) :-
-    phrase(djota:inline_text("<a href=\"http://example.com\">My link text</a>", []), "[My link text](http://example.com)"),
-    phrase(djota:inline_text("<a href=\"http://example.com\">My link text</a>", [ref("foo bar", "http://example.com")]), "[My link text][foo bar]"),
-    phrase(djota:inline_text("<a>foo</a>", []), "[foo][bar]"),
-    phrase(djota:inline_text("<a href=\"/url\">My link text</a>", [ref("My link text", "/url")]), "[My link text][]").
+    djota:djot("My link [link](http://example.com) hola", "<p>My link <a href=\"http://example.com\">link</a> hola</p>").
+
+test(image_ast) :-
+    djota:inline_text_ast("![picture of a cat](cat.jpg)", [image("picture of a cat", "cat.jpg")]),
+    djota:inline_text_ast("![picture of a cat][cat]", [image_ref("picture of a cat", "cat")]).
 
 test(image) :-
-    phrase(djota:inline_text("<img alt=\"picture of a cat\" src=\"cat.jpg\">", []), "![picture of a cat](cat.jpg)"),
-    phrase(djota:inline_text("<img alt=\"picture of a cat\" src=\"feline.jpg\">", [ref("cat", "feline.jpg")]), "![picture of a cat][cat]"),
-    phrase(djota:inline_text("<img alt=\"cat\" src=\"feline.jpg\">", [ref("cat", "feline.jpg")]), "![cat][]").
+    djota:djot("![picture of a cat](cat.jpg)", "<p><img alt=\"picture of a cat\" src=\"cat.jpg\"></p>").
 
 test(paragraph) :-
     djota:djot("Hello friends\nof [YouTube](https://youtube.com)", "<p>Hello friends of <a href=\"https://youtube.com\">YouTube</a></p>"),
