@@ -33,6 +33,19 @@ test(verbatim) :-
     djota:djot("``Verbatim with a backtick` character``", "<p><code>Verbatim with a backtick` character</code></p>"),
     djota:djot("`Verbatim with three backticks ``` character`", "<p><code>Verbatim with three backticks ``` character</code></p>").
 
+test(emphasis_ast) :-
+    djota:inline_text_ast("Hello _Prolog_!", [str("Hello "),emphasis([str("Prolog")]),str("!")]),
+    djota:inline_text_ast("Hello _ Prolog_!", [str("Hello _ Prolog_!")]),
+    djota:inline_text_ast("Hello _Hello_Prolog _ _!", [str("Hello "),emphasis([str("Hello")]),str("Prolog _ _!")]),
+    djota:inline_text_ast("Hello _Hello_Prolog_ _!", [str("Hello "),emphasis([str("Hello_Prolog")]),str(" _!")]),
+    djota:inline_text_ast("Hello _Hello_Prolog__!", [str("Hello "),emphasis([str("Hello"),emphasis([str("Prolog")])]),str("!")]).
+
+test(strong_ast) :-
+    djota:inline_text_ast("*HelloHello*Prolog*_!", [strong([str("HelloHello*Prolog")]),str("_!")]).
+
+test(emphasis_strong) :-
+    djota:djot("Hello _Prolog_! You said: _I *need* to_wake up__", "<p>Hello <em>Prolog<em>! You said: <em>I <strong>need</strong> to</em>wake up</em></em></p>").
+
 test(paragraph) :-
     djota:djot("Hello friends\nof [YouTube](https://youtube.com)", "<p>Hello friends of <a href=\"https://youtube.com\">YouTube</a></p>"),
     djota:djot("Hello Prolog!\n\nHello Djot!\n\n", "<p>Hello Prolog!</p><p>Hello Djot!</p>").

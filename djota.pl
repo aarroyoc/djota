@@ -130,6 +130,12 @@ ast_html_node_(image(AltText, Url)) -->
     format_("<img alt=\"~s\" src=\"~s\">", [AltText, Url]).
 ast_html_node_(verbatim(Text)) -->
     "<code>", Text, "</code>".
+ast_html_node_(emphasis(Child)) -->
+    { phrase(ast_html_(Child), ChildHtml) },
+    "<em>", ChildHtml, "</em>".
+ast_html_node_(strong(Child)) -->
+    { phrase(ast_html_(Child), ChildHtml) },
+    "<strong>", ChildHtml, "</strong>".
 ast_html_node_(str(Str)) -->
     Str.
 
@@ -168,6 +174,10 @@ inline_text_ast(Text, Ast) :-
     once(phrase(inline_text_ast_(Ast), Text)).
 
 inline_text_ast_(Ast) -->
+    strong_ast_(Ast).
+inline_text_ast_(Ast) -->
+    emphasis_ast_(Ast).
+inline_text_ast_(Ast) -->
     verbatim_ast_(Ast).
 inline_text_ast_(Ast) -->
     autolink_ast_(Ast).
@@ -183,6 +193,46 @@ inline_text_ast_(Ast) -->
     str_ast_(Ast).
 inline_text_ast_([]) -->
     [].
+
+emphasis_ast_([emphasis(InlineAst)|Ast0]) -->
+    ( ("_", look_ahead(T), { T \= ' ' }) | "{_" ),
+    inline_text_ast_(InlineAst),
+    {
+	append(_, [End], InlineAst),
+	(
+	    End = str(StrEnd) ->
+	    ( append(_, [EndChar], StrEnd), EndChar \= ' ' )
+	;   true
+	)
+    },
+    "_",
+    inline_text_ast_(Ast0).
+
+emphasis_ast_([emphasis(InlineAst)|Ast0]) -->
+    ( ("_", look_ahead(T), { T \= ' ' }) | "{_" ),
+    inline_text_ast_(InlineAst),
+    "_}",
+    inline_text_ast_(Ast0).
+
+strong_ast_([strong(InlineAst)|Ast0]) -->
+    ( ("*", look_ahead(T), { T \= ' ' }) | "{*" ),
+    inline_text_ast_(InlineAst),
+    {
+	append(_, [End], InlineAst),
+	(
+	    End = str(StrEnd) ->
+	    ( append(_, [EndChar], StrEnd), EndChar \= ' ' )
+	;   true
+	)
+    },
+    "*",
+    inline_text_ast_(Ast0).
+
+strong_ast_([strong(InlineAst)|Ast0]) -->
+    ( ("*", look_ahead(T), { T \= ' ' }) | "{*" ),
+    inline_text_ast_(InlineAst),
+    "*}",
+    inline_text_ast_(Ast0).
 
 verbatim_ast_([verbatim(Str)|Ast0]) -->
     backticks(N, _),
