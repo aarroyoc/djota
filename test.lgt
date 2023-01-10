@@ -25,6 +25,14 @@ test(image) :-
 test(autolink_ast) :-
     djota:inline_text_ast("Welcome to <https://www.scryer.pl>!", [str("Welcome to "),link("https://www.scryer.pl","https://www.scryer.pl"),str("!")]).
 
+test(verbatim_ast) :-
+    djota:inline_text_ast("``Verbatim with a backtick` character``", [verbatim("Verbatim with a backtick` character")]),
+    djota:inline_text_ast("`Verbatim with three backticks ``` character`", [verbatim("Verbatim with three backticks ``` character")]).
+
+test(verbatim) :-
+    djota:djot("``Verbatim with a backtick` character``", "<p><code>Verbatim with a backtick` character</code></p>"),
+    djota:djot("`Verbatim with three backticks ``` character`", "<p><code>Verbatim with three backticks ``` character</code></p>").
+
 test(paragraph) :-
     djota:djot("Hello friends\nof [YouTube](https://youtube.com)", "<p>Hello friends of <a href=\"https://youtube.com\">YouTube</a></p>"),
     djota:djot("Hello Prolog!\n\nHello Djot!\n\n", "<p>Hello Prolog!</p><p>Hello Djot!</p>").

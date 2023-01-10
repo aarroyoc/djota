@@ -128,6 +128,8 @@ ast_html_node_(link(Name, Url)) -->
     format_("<a href=\"~s\">~s</a>", [Url, Name]).
 ast_html_node_(image(AltText, Url)) -->
     format_("<img alt=\"~s\" src=\"~s\">", [AltText, Url]).
+ast_html_node_(verbatim(Text)) -->
+    "<code>", Text, "</code>".
 ast_html_node_(str(Str)) -->
     Str.
 
@@ -166,6 +168,8 @@ inline_text_ast(Text, Ast) :-
     once(phrase(inline_text_ast_(Ast), Text)).
 
 inline_text_ast_(Ast) -->
+    verbatim_ast_(Ast).
+inline_text_ast_(Ast) -->
     autolink_ast_(Ast).
 inline_text_ast_(Ast) -->
     reference_image_ast_(Ast).
@@ -179,6 +183,29 @@ inline_text_ast_(Ast) -->
     str_ast_(Ast).
 inline_text_ast_([]) -->
     [].
+
+verbatim_ast_([verbatim(Str)|Ast0]) -->
+    backticks(N, _),
+    backticks_end(N, Str),
+    inline_text_ast_(Ast0).
+
+backticks_end(N, Str) -->
+    backticks(M, Str0), { M \= N },
+    backticks_end(N, Str1),
+    {
+	append(Str0, Str1, Str)
+    }.
+backticks_end(N, "") -->
+    backticks(N, _).
+backticks_end(N, [Char|Str0]) -->
+    [Char], { Char \= "`" },
+    backticks_end(N, Str0).
+
+backticks(N, ['`'|Str]) -->
+    "`",
+    backticks(N0, Str),
+    { N is N0 + 1 }.
+backticks(1, "`") --> "`".
 
 autolink_ast_([link(Url, Url)|Ast0]) -->
     "<",
@@ -265,3 +292,5 @@ str_ast_([str([Char])]) -->
     [Char],
     inline_text_ast_([]).
 
+
+look_ahead(T), [T] --> [T].
