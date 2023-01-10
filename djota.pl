@@ -166,6 +166,8 @@ inline_text_ast(Text, Ast) :-
     once(phrase(inline_text_ast_(Ast), Text)).
 
 inline_text_ast_(Ast) -->
+    autolink_ast_(Ast).
+inline_text_ast_(Ast) -->
     reference_image_ast_(Ast).
 inline_text_ast_(Ast) -->
     inline_image_ast_(Ast).
@@ -177,6 +179,15 @@ inline_text_ast_(Ast) -->
     str_ast_(Ast).
 inline_text_ast_([]) -->
     [].
+
+autolink_ast_([link(Url, Url)|Ast0]) -->
+    "<",
+    seq(Url),
+    ">",
+    inline_text_ast_(Ast0),
+    {
+	append("http://", _, Url);append("https://", _, Url)
+    }.
 
 reference_image_ast_([Node|Ast0]) -->
     "![",
