@@ -33,6 +33,11 @@ djot_ast_([Line|Lines]) -->
     { phrase(blockquote_line(Text), Line) },
     djot_blockquote_ast_(Lines, Text).
 
+% List
+djot_ast_([Line|Lines]) -->
+    { phrase(list_line(Type, Text), Line) },
+    djot_list_ast_(Type, Lines, Text, [], continue).
+
 % Paragraph
 djot_ast_([Line|Lines]) -->
     { Line \= "" },
@@ -43,6 +48,71 @@ djot_ast_([[]|Lines]) -->
     djot_ast_(Lines).
 % No more lines
 djot_ast_([]) --> [].
+
+% List: Line of list type same as current list
+djot_list_ast_(type(Level, Type, Mode), [Line|Lines], CurrentItem, Items, _) -->
+    {
+	phrase(list_line(type(Level, Type, _), Text), Line),
+	djot_ast(CurrentItem, ItemAst),
+	append(Items, [item(ItemAst)], NewItems)
+    },
+    djot_list_ast_(type(Level, Type, Mode), Lines, Text, NewItems, continue).
+% List: Line non indented in continue mode
+djot_list_ast_(Type, [Line|Lines], CurrentItem, Items, continue) -->
+    {
+	Line \= "",
+	\+ phrase(list_line(_, _), Line),
+	append(CurrentItem, ['\n'|Line], CurrentItem1)
+    },
+    djot_list_ast_(Type, Lines, CurrentItem1, Items, continue).
+% List: Empty line
+djot_list_ast_(type(Level, Type, _), [Line|Lines], CurrentItem, Items, _) -->
+    {
+	phrase(whites(_), Line),
+	append(CurrentItem, ['\n'|Line], CurrentItem1)
+    },
+    djot_list_ast_(type(Level, Type, loose), Lines, CurrentItem1, Items, jump).
+
+% List: Line indented in jump mode
+djot_list_ast_(type(Level, Type, Mode), [Line|Lines], CurrentItem, Items, jump) -->
+    {
+	phrase((whites(W), seq(Text)), Line),
+	W > Level,
+	append(CurrentItem, ['\n'|Text], CurrentItem1)
+    },
+    djot_list_ast_(type(Level, Type, Mode), Lines, CurrentItem1, Items, jump).
+
+% List: Line not indented in jump mode
+djot_list_ast_(type(Level, Type, Mode), [Line|Lines], CurrentItem, Items, jump) -->
+    {
+	phrase((whites(W), seq(_)), Line),
+	W =< Level,
+	djot_ast(CurrentItem, ItemAst),
+	append(Items, [item(ItemAst)], NewItems)	
+    },
+    [list(type(Level, Type, Mode), NewItems)],
+    djot_ast_([Line|Lines]).
+
+% List: No more lines
+djot_list_ast_(Type, [], CurrentItem, Items, _) -->
+    {
+	djot_ast(CurrentItem, ItemAst),
+        append(Items, [item(ItemAst)], NewItems)	
+    },
+    [list(Type, NewItems)].
+
+
+list_type(bullet("-")) --> "-".
+list_type(bullet("*")) --> "*".
+list_type(bullet("+")) --> "+".
+list_line(type(Level, Type, tight), Text) -->
+    whites(Level), list_type(Type), " ", seq(Text).
+
+whites(0) --> "".
+whites(N) -->
+    " ",
+    whites(N0),
+    { N is N0 + 1}.
 
 djot_heading_ast_([Line|Lines], N, Header) -->
     { phrase(heading_line(N, Header), Line), append(Header, [' '|Line], Header1) },
@@ -154,6 +224,10 @@ ast_html_node_(section(N, Header, Child)) -->
 ast_html_node_(blockquote(Child)) -->
     { phrase(ast_html_(Child), ChildHtml) },
     "<blockquote>", ChildHtml, "</blockquote>".
+ast_html_node_(list(type(_, bullet(_), Mode), Items)) -->
+    "<li>",
+    ast_html_node_items_(Items, Mode),
+    "</li>".
 ast_html_node_(link(Name, Url)) -->
     format_("<a href=\"~s\">~s</a>", [Url, Name]).
 ast_html_node_(image(AltText, Url)) -->
@@ -178,6 +252,20 @@ ast_html_node_(delete(Str)) -->
     "<del>", Str, "</del>".
 ast_html_node_(str(Str)) -->
     Str.
+
+ast_html_node_items_([], _) --> "".
+ast_html_node_items_([item(Item)|Items], loose) -->
+    { phrase(ast_html_(Item), Html) },
+    "<ul>",
+    Html,
+    "</ul>",
+    ast_html_node_items_(Items, loose).
+ast_html_node_items_([item([paragraph(Item)])|Items], tight) -->
+    { phrase(ast_html_(Item), Html) },
+    "<ul>",
+    Html,
+    "</ul>",
+    ast_html_node_items_(Items, tight).
 
 char(X) -->
     [X],

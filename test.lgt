@@ -78,4 +78,15 @@ test(blockquote) :-
     djota:djot("> This is a block quote.\n>\n> Hello again", "<blockquote><p>This is a block quote.</p><p>Hello again</p></blockquote>"),
     djota:djot("> This is a block quote.\nAnd lazy", "<blockquote><p>This is a block quote. And lazy</p></blockquote>").
 
+test(list_ast) :-
+    djota:djot_ast("- Hola", [list(type(0, bullet("-"), tight),[item([paragraph([str("Hola")])])])]),
+    djota:djot_ast("- Hola\n- Adios", [list(type(0, bullet("-"), tight),[item([paragraph([str("Hola")])]),item([paragraph([str("Adios")])])])]),
+    djota:djot_ast("- Hola\namigos\n- Adios\namigos", [list(type(0,bullet("-"),tight),[item([paragraph([str("Hola amigos")])]),item([paragraph([str("Adios amigos")])])])]),
+    djota:djot_ast("- Hola\namigos\n\n- Adios\namigos", [list(type(0,bullet("-"),loose),[item([paragraph([str("Hola amigos")])]),item([paragraph([str("Adios amigos")])])])]),    
+    djota:djot_ast("- Hola\namigos\n\n - Sublist\n- Adios\namigos", [list(type(0, bullet("-"), loose),[item([paragraph([str("Hola amigos")]),list(type(0, bullet("-"), tight),[item([paragraph([str("Sublist")])])])]),item([paragraph([str("Adios amigos")])])])]).
+
+test(list) :-
+    djota:djot("- Hola\namigos\n\n - Sublist\n- Adios\namigos", "<li><ul><p>Hola amigos</p><li><ul>Sublist</ul></li></ul><ul><p>Adios amigos</p></ul></li>").
+    
+
 :- end_object.
