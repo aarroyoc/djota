@@ -28,6 +28,11 @@ djot_ast_([Line|Lines]) -->
     { phrase(heading_line(N, Header), Line) },
     djot_heading_ast_(Lines, N, Header).
 
+% Blockquote
+djot_ast_([Line|Lines]) -->
+    { phrase(blockquote_line(Text), Line) },
+    djot_blockquote_ast_(Lines, Text).
+
 % Paragraph
 djot_ast_([Line|Lines]) -->
     { Line \= "" },
@@ -77,6 +82,28 @@ section_lines([], N) -->
     heading_line(N, _).
 section_lines([], _) --> [].
 
+djot_blockquote_ast_([Line|Lines], Block) -->
+    { phrase(blockquote_line(Text), Line), append(Block, ['\n'|Text], Block1) },
+    djot_blockquote_ast_(Lines, Block1).
+
+djot_blockquote_ast_([Line|Lines], Block) -->
+    { Line \= "", \+ phrase(blockquote_line(_), Line), append(Block, ['\n'|Line], Block1) },
+    djot_blockquote_ast_(Lines, Block1).
+
+djot_blockquote_ast_([""|Lines], Block) -->
+    { djot_ast(Block, InsideAst) },
+    [blockquote(InsideAst)],
+    djot_ast_(Lines).
+
+djot_blockquote_ast_([], Block) -->
+    djot_blockquote_ast_([""], Block).
+
+blockquote_line(Text) -->
+    "> ", seq(Text).
+
+blockquote_line("") -->
+    ">".
+
 djot_paragraph_ast_([Line|Lines], Paragraph0) -->
     {
 	Line \= "",
@@ -124,6 +151,9 @@ ast_html_node_(paragraph(InlineAst)) -->
 ast_html_node_(section(N, Header, Child)) -->
     { phrase(ast_html_(Child), ChildHtml) },
     format_("<section><h~d>~s</h~d>~s</section>", [N, Header, N, ChildHtml]).
+ast_html_node_(blockquote(Child)) -->
+    { phrase(ast_html_(Child), ChildHtml) },
+    "<blockquote>", ChildHtml, "</blockquote>".
 ast_html_node_(link(Name, Url)) -->
     format_("<a href=\"~s\">~s</a>", [Url, Name]).
 ast_html_node_(image(AltText, Url)) -->

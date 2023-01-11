@@ -74,4 +74,8 @@ test(thematic_break) :-
 test(section) :-
     djota:djot("Then they went to\n\n# sleep.\n\n  * * * *  \n\nWhen they woke up, ...\n\n# Hola\n\nIt's me", "<p>Then they went to</p><section><h1>sleep.</h1><hr><p>When they woke up, ...</p></section><section><h1>Hola</h1><p>It\'s me</p></section>").
 
+test(blockquote) :-
+    djota:djot("> This is a block quote.\n>\n> Hello again", "<blockquote><p>This is a block quote.</p><p>Hello again</p></blockquote>"),
+    djota:djot("> This is a block quote.\nAnd lazy", "<blockquote><p>This is a block quote. And lazy</p></blockquote>").
+
 :- end_object.
