@@ -46,6 +46,24 @@ test(strong_ast) :-
 test(emphasis_strong) :-
     djota:djot("Hello _Prolog_! You said: _I *need* to_wake up__", "<p>Hello <em>Prolog<em>! You said: <em>I <strong>need</strong> to</em>wake up</em></em></p>").
 
+test(highlight_ast) :-
+    djota:inline_text_ast("Hello {=Prolog=}!", [str("Hello "), highlight("Prolog"), str("!")]).
+
+test(highlight) :-
+    djota:djot("Hello {=Prolog=}!", "<p>Hello <mark>Prolog</mark>!</p>").
+
+test(super_subscript_ast) :-
+    djota:inline_text_ast("H~2~O and djot^TM^", [str("H"),subscript("2"),str("O and djot"),superscript("TM")]).
+
+test(super_subscript) :-
+    djota:djot("H~2~O and djot^TM^", "<p>H<sub>2</sub>O and djot<sup>TM</sup></p>").
+
+test(insert_delete_ast) :-
+    djota:inline_text_ast("My boss is {-mean-}{+nice+}.", [str("My boss is "),delete("mean"),insert("nice"),str(".")]).
+
+test(insert_delete) :-
+    djota:djot("My boss is {-mean-}{+nice+}.", "<p>My boss is <del>mean</del><ins>nice</ins>.</p>").
+
 test(paragraph) :-
     djota:djot("Hello friends\nof [YouTube](https://youtube.com)", "<p>Hello friends of <a href=\"https://youtube.com\">YouTube</a></p>"),
     djota:djot("Hello Prolog!\n\nHello Djot!\n\n", "<p>Hello Prolog!</p><p>Hello Djot!</p>").

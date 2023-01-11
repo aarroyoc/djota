@@ -136,6 +136,16 @@ ast_html_node_(emphasis(Child)) -->
 ast_html_node_(strong(Child)) -->
     { phrase(ast_html_(Child), ChildHtml) },
     "<strong>", ChildHtml, "</strong>".
+ast_html_node_(highlight(Str)) -->
+    "<mark>", Str, "</mark>".
+ast_html_node_(superscript(Str)) -->
+    "<sup>", Str, "</sup>".
+ast_html_node_(subscript(Str)) -->
+    "<sub>", Str, "</sub>".
+ast_html_node_(insert(Str)) -->
+    "<ins>", Str, "</ins>".
+ast_html_node_(delete(Str)) -->
+    "<del>", Str, "</del>".
 ast_html_node_(str(Str)) -->
     Str.
 
@@ -174,6 +184,16 @@ inline_text_ast(Text, Ast) :-
     once(phrase(inline_text_ast_(Ast), Text)).
 
 inline_text_ast_(Ast) -->
+    insert_ast_(Ast).
+inline_text_ast_(Ast) -->
+    delete_ast_(Ast).
+inline_text_ast_(Ast) -->
+    superscript_ast_(Ast).
+inline_text_ast_(Ast) -->
+    subscript_ast_(Ast).
+inline_text_ast_(Ast) -->
+    highlight_ast_(Ast).
+inline_text_ast_(Ast) -->
     strong_ast_(Ast).
 inline_text_ast_(Ast) -->
     emphasis_ast_(Ast).
@@ -193,6 +213,36 @@ inline_text_ast_(Ast) -->
     str_ast_(Ast).
 inline_text_ast_([]) -->
     [].
+
+insert_ast_([insert(Str)|Ast0]) -->
+    "{+",
+    seq(Str),
+    "+}",
+    inline_text_ast_(Ast0).
+
+delete_ast_([delete(Str)|Ast0]) -->
+    "{-",
+    seq(Str),
+    "-}",
+    inline_text_ast_(Ast0).
+
+superscript_ast_([superscript(Str)|Ast0]) -->
+    ( "^" | "{^" ),
+    seq(Str),
+    ( "^" | "^}" ),
+    inline_text_ast_(Ast0).
+
+subscript_ast_([subscript(Str)|Ast0]) -->
+    ( "~" | "{~" ),
+    seq(Str),
+    ( "~" | "~}" ),
+    inline_text_ast_(Ast0).
+
+highlight_ast_([highlight(Str)|Ast0]) -->
+    "{=",
+    seq(Str),
+    "=}",
+    inline_text_ast_(Ast0).
 
 emphasis_ast_([emphasis(InlineAst)|Ast0]) -->
     ( ("_", look_ahead(T), { T \= ' ' }) | "{_" ),
