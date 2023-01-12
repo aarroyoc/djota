@@ -38,6 +38,11 @@ djot_ast_([Line|Lines]) -->
     { phrase(list_line(Type, Text), Line) },
     djot_list_ast_(Type, Lines, Text, [], continue).
 
+% Code block
+djot_ast_([Line|Lines]) -->
+    { phrase((backticks(N, _), ... ), Line), N >= 3 },
+    djot_code_ast_(Lines, N, "").
+
 % Paragraph
 djot_ast_([Line|Lines]) -->
     { Line \= "" },
@@ -48,6 +53,19 @@ djot_ast_([[]|Lines]) -->
     djot_ast_(Lines).
 % No more lines
 djot_ast_([]) --> [].
+
+% Code block
+djot_code_ast_([Line|Lines], N, Code0) -->
+    { \+ ( phrase(backticks(M, _), Line), M >= N), append(Code0, ['\n'|Line], Code) },
+    djot_code_ast_(Lines, N, Code).
+
+djot_code_ast_([Line|Lines], N, Code0) -->
+    { phrase(backticks(M, _), Line), M >= N },
+    [code(Code0)],
+    djot_ast_(Lines).
+
+djot_code_ast_([], _, Code0) -->
+    [code(Code0)].
 
 % List: Line of list type same as current list
 djot_list_ast_(type(Level, Type, Mode), [Line|Lines], CurrentItem, Items, _) -->
@@ -228,6 +246,8 @@ ast_html_node_(list(type(_, bullet(_), Mode), Items)) -->
     "<li>",
     ast_html_node_items_(Items, Mode),
     "</li>".
+ast_html_node_(code(Code)) -->
+    "<pre><code>", Code, "</pre></code>".
 ast_html_node_(link(Name, Url)) -->
     format_("<a href=\"~s\">~s</a>", [Url, Name]).
 ast_html_node_(image(AltText, Url)) -->
