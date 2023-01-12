@@ -247,7 +247,8 @@ ast_html_node_(list(type(_, bullet(_), Mode), Items)) -->
     ast_html_node_items_(Items, Mode),
     "</li>".
 ast_html_node_(code(Code)) -->
-    "<pre><code>", Code, "</pre></code>".
+    { phrase(escape_html_(Html), Code) },
+    "<pre><code>", Html, "</pre></code>".
 ast_html_node_(link(Name, Url)) -->
     format_("<a href=\"~s\">~s</a>", [Url, Name]).
 ast_html_node_(image(AltText, Url)) -->
@@ -286,6 +287,29 @@ ast_html_node_items_([item([paragraph(Item)])|Items], tight) -->
     Html,
     "</ul>",
     ast_html_node_items_(Items, tight).
+
+escape_html_([]) --> [].
+escape_html_(Html) -->
+    [Char],
+    {
+        Char = '&', append("&amp;", Html0, Html)
+    },
+    escape_html_(Html0).
+escape_html_(Html) -->
+    [Char],
+    {
+	Char = (<), append("&lt;", Html0, Html)
+    },
+    escape_html_(Html0).
+escape_html_(Html) -->
+    [Char],
+    {
+	Char = (>), append("&gt;", Html0, Html)
+    },
+    escape_html_(Html0).
+escape_html_([Char|Html0]) -->
+    [Char],
+    escape_html_(Html0).
 
 char(X) -->
     [X],

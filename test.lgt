@@ -90,6 +90,7 @@ test(list) :-
 
 test(code_block) :-
     djota:djot("````\nThis is how you do a code block:\n\n``` ruby\nx = 5 * 6\n```\n````", "<pre><code>\nThis is how you do a code block:\n\n``` ruby\nx = 5 * 6\n```</pre></code>"),
-    djota:djot("> ```\n> code in a\n> block quote\n\nParagraph.", "<blockquote><pre><code>\ncode in a\nblock quote</pre></code></blockquote><p>Paragraph.</p>").
+    djota:djot("> ```\n> code in a\n> block quote\n\nParagraph.", "<blockquote><pre><code>\ncode in a\nblock quote</pre></code></blockquote><p>Paragraph.</p>"),
+    djota:djot("````\nThis is <html></html>````", "<pre><code>\nThis is &lt;html&gt;&lt;/html&gt;````</pre></code>").
 
 :- end_object.
