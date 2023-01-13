@@ -93,4 +93,10 @@ test(code_block) :-
     djota:djot("> ```\n> code in a\n> block quote\n\nParagraph.", "<blockquote><pre><code>\ncode in a\nblock quote</pre></code></blockquote><p>Paragraph.</p>"),
     djota:djot("````\nThis is <html></html>````", "<pre><code>\nThis is &lt;html&gt;&lt;/html&gt;````</pre></code>").
 
+test(raw_block) :-
+    djota:djot("``` =html\n<video width=320 height=240 controls>\n</video>\n```", "\n<video width=320 height=240 controls>\n</video>").
+
+test(div_block) :-
+    djota:djot("::: warning\nHere is a paragraph.\n\nAnd here is another.\n:::", "<div class=\"warning\"><p>Here is a paragraph.</p><p>And here is another.</p></div>").
+
 :- end_object.

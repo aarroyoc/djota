@@ -4,6 +4,7 @@
 :- use_module(library(dcgs)).
 :- use_module(library(pio)).
 :- use_module(library(lists)).
+:- use_module(library(dif)).
 
 % Block syntax
 
@@ -40,8 +41,13 @@ djot_ast_([Line|Lines]) -->
 
 % Code block
 djot_ast_([Line|Lines]) -->
-    { phrase((backticks(N, _), ... ), Line), N >= 3 },
-    djot_code_ast_(Lines, N, "").
+    { phrase(((backticks(N, _), " ", seq(Spec)) | backticks(N, _), ... ), Line), N >= 3 },
+    djot_code_ast_(Lines, N, "", Spec).
+
+% Div block
+djot_ast_([Line|Lines]) -->
+    { phrase(((colons(N), " ", seq(ClassName)) | colons(N), ... ), Line), N >= 3 },
+    djot_div_ast_(Lines, N, "", ClassName).
 
 % Paragraph
 djot_ast_([Line|Lines]) -->
@@ -55,17 +61,17 @@ djot_ast_([[]|Lines]) -->
 djot_ast_([]) --> [].
 
 % Code block
-djot_code_ast_([Line|Lines], N, Code0) -->
+djot_code_ast_([Line|Lines], N, Code0, Spec) -->
     { \+ ( phrase(backticks(M, _), Line), M >= N), append(Code0, ['\n'|Line], Code) },
-    djot_code_ast_(Lines, N, Code).
+    djot_code_ast_(Lines, N, Code, Spec).
 
-djot_code_ast_([Line|Lines], N, Code0) -->
+djot_code_ast_([Line|Lines], N, Code0, Spec) -->
     { phrase(backticks(M, _), Line), M >= N },
-    [code(Code0)],
+    [code(Spec, Code0)],
     djot_ast_(Lines).
 
-djot_code_ast_([], _, Code0) -->
-    [code(Code0)].
+djot_code_ast_([], _, Code0, Spec) -->
+    [code(Spec, Code0)].
 
 % List: Line of list type same as current list
 djot_list_ast_(type(Level, Type, Mode), [Line|Lines], CurrentItem, Items, _) -->
@@ -192,6 +198,19 @@ blockquote_line(Text) -->
 blockquote_line("") -->
     ">".
 
+djot_div_ast_([Line|Lines], N, Block, ClassName) -->
+    { \+ (phrase(colons(M), Line), M >= N), append(Block, ['\n'|Line], Block1) },
+    djot_div_ast_(Lines, N, Block1, ClassName).
+
+djot_div_ast_([Line|Lines], N, Block, ClassName) -->
+    { phrase(colons(M), Line), M >= N, djot_ast(Block, InsideAst) },
+    [div_block(ClassName, InsideAst)],
+    djot_ast_(Lines).
+
+djot_div_ast_([], _, Block, ClassName) -->
+    { djot_ast(Block, InsideAst) },
+    [div_block(ClassName, InsideAst)].
+
 djot_paragraph_ast_([Line|Lines], Paragraph0) -->
     {
 	Line \= "",
@@ -246,9 +265,17 @@ ast_html_node_(list(type(_, bullet(_), Mode), Items)) -->
     "<li>",
     ast_html_node_items_(Items, Mode),
     "</li>".
-ast_html_node_(code(Code)) -->
-    { phrase(escape_html_(Html), Code) },
+ast_html_node_(code(Spec, Code)) -->
+    { dif(Spec, "=html"), phrase(escape_html_(Html), Code) },
     "<pre><code>", Html, "</pre></code>".
+ast_html_node_(code("=html", Html)) -->
+    Html.
+ast_html_node_(div_block(ClassName, Block)) -->
+    { var(ClassName), phrase(ast_html_(Block), Html) },
+    "<div>", Html, "</div>".
+ast_html_node_(div_block(ClassName, Block)) -->
+    { nonvar(ClassName), phrase(ast_html_(Block), Html) },
+    "<div class=\"", ClassName, "\">", Html, "</div>".
 ast_html_node_(link(Name, Url)) -->
     format_("<a href=\"~s\">~s</a>", [Url, Name]).
 ast_html_node_(image(AltText, Url)) -->
@@ -468,6 +495,12 @@ backticks(N, ['`'|Str]) -->
     backticks(N0, Str),
     { N is N0 + 1 }.
 backticks(1, "`") --> "`".
+
+colons(N) -->
+    ":",
+    colons(N0),
+    { N is N0 + 1 }.
+colons(1) --> ":".
 
 autolink_ast_([link(Url, Url)|Ast0]) -->
     "<",
