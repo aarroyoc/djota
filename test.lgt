@@ -44,7 +44,7 @@ test(strong_ast) :-
     djota:inline_text_ast("*HelloHello*Prolog*_!", [strong([str("HelloHello*Prolog")]),str("_!")]).
 
 test(emphasis_strong) :-
-    djota:djot("Hello _Prolog_! You said: _I *need* to_wake up__", "<p>Hello <em>Prolog<em>! You said: <em>I <strong>need</strong> to</em>wake up</em></em></p>").
+    djota:djot("Hello _Prolog_! You said: _I *need* to_wake up__", "<p>Hello <em>Prolog</em>! You said: <em>I <strong>need</strong> to</em>wake up__</p>").
 
 test(highlight_ast) :-
     djota:inline_text_ast("Hello {=Prolog=}!", [str("Hello "), highlight("Prolog"), str("!")]).

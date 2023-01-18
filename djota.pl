@@ -435,42 +435,38 @@ highlight_ast_([highlight(Str)|Ast0]) -->
 
 emphasis_ast_([emphasis(InlineAst)|Ast0]) -->
     ( ("_", look_ahead(T), { T \= ' ' }) | "{_" ),
-    inline_text_ast_(InlineAst),
-    {
-	append(_, [End], InlineAst),
-	(
-	    End = str(StrEnd) ->
-	    ( append(_, [EndChar], StrEnd), EndChar \= ' ' )
-	;   true
-	)
-    },
+    seq(Inline),
     "_",
+    {
+	append(_, [G], Inline),
+	G \= ' ',
+	inline_text_ast(Inline, InlineAst)
+    },
     inline_text_ast_(Ast0).
 
 emphasis_ast_([emphasis(InlineAst)|Ast0]) -->
     ( ("_", look_ahead(T), { T \= ' ' }) | "{_" ),
-    inline_text_ast_(InlineAst),
+    seq(Inline),
     "_}",
+    { inline_text_ast(Inline, InlineAst) },
     inline_text_ast_(Ast0).
 
 strong_ast_([strong(InlineAst)|Ast0]) -->
     ( ("*", look_ahead(T), { T \= ' ' }) | "{*" ),
-    inline_text_ast_(InlineAst),
-    {
-	append(_, [End], InlineAst),
-	(
-	    End = str(StrEnd) ->
-	    ( append(_, [EndChar], StrEnd), EndChar \= ' ' )
-	;   true
-	)
-    },
+    seq(Inline),
     "*",
+    {
+	append(_, [G], Inline),
+	G \= ' ',
+	inline_text_ast(Inline, InlineAst)
+    },
     inline_text_ast_(Ast0).
 
 strong_ast_([strong(InlineAst)|Ast0]) -->
     ( ("*", look_ahead(T), { T \= ' ' }) | "{*" ),
-    inline_text_ast_(InlineAst),
+    seq(Inline),
     "*}",
+    { inline_text_ast(Inline, InlineAst) },
     inline_text_ast_(Ast0).
 
 verbatim_ast_([verbatim(Str)|Ast0]) -->
