@@ -262,9 +262,9 @@ ast_html_node_(blockquote(Child)) -->
     { phrase(ast_html_(Child), ChildHtml) },
     "<blockquote>", ChildHtml, "</blockquote>".
 ast_html_node_(list(type(_, bullet(_), Mode), Items)) -->
-    "<li>",
+    "<ul>",
     ast_html_node_items_(Items, Mode),
-    "</li>".
+    "</ul>".
 ast_html_node_(code(Spec, Code)) -->
     { dif(Spec, "=html"), phrase(escape_html_(Html), Code) },
     "<pre><code>", Html, "</pre></code>".
@@ -304,15 +304,15 @@ ast_html_node_(str(Str)) -->
 ast_html_node_items_([], _) --> "".
 ast_html_node_items_([item(Item)|Items], loose) -->
     { phrase(ast_html_(Item), Html) },
-    "<ul>",
+    "<li>",
     Html,
-    "</ul>",
+    "</li>",
     ast_html_node_items_(Items, loose).
 ast_html_node_items_([item([paragraph(Item)])|Items], tight) -->
     { phrase(ast_html_(Item), Html) },
-    "<ul>",
+    "<li>",
     Html,
-    "</ul>",
+    "</li>",
     ast_html_node_items_(Items, tight).
 
 escape_html_([]) --> [].

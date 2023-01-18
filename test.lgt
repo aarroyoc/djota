@@ -86,7 +86,7 @@ test(list_ast) :-
     djota:djot_ast("- Hola\namigos\n\n - Sublist\n- Adios\namigos", [list(type(0, bullet("-"), loose),[item([paragraph([str("Hola amigos")]),list(type(0, bullet("-"), tight),[item([paragraph([str("Sublist")])])])]),item([paragraph([str("Adios amigos")])])])]).
 
 test(list) :-
-    djota:djot("- Hola\namigos\n\n - Sublist\n- Adios\namigos", "<li><ul><p>Hola amigos</p><li><ul>Sublist</ul></li></ul><ul><p>Adios amigos</p></ul></li>").
+    djota:djot("- Hola\namigos\n\n - Sublist\n- Adios\namigos", "<ul><li><p>Hola amigos</p><ul><li>Sublist</li></ul></li><li><p>Adios amigos</p></li></ul>").
 
 test(code_block) :-
     djota:djot("````\nThis is how you do a code block:\n\n``` ruby\nx = 5 * 6\n```\n````", "<pre><code>\nThis is how you do a code block:\n\n``` ruby\nx = 5 * 6\n```</pre></code>"),
