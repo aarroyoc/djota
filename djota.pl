@@ -121,7 +121,7 @@ djot_list_ast_(type(Level, Type, Mode), [Line|Lines], CurrentItem, Items, jump) 
 djot_list_ast_(Type, [], CurrentItem, Items, _) -->
     {
 	djot_ast(CurrentItem, ItemAst),
-        append(Items, [item(ItemAst)], NewItems)	
+        append(Items, [item(ItemAst)], NewItems)
     },
     [list(Type, NewItems)].
 
@@ -499,13 +499,11 @@ colons(N) -->
 colons(1) --> ":".
 
 autolink_ast_([link(Url, Url)|Ast0]) -->
+    { append("http://", _, Url); append("https://", _, Url) },
     "<",
     seq(Url),
     ">",
-    inline_text_ast_(Ast0),
-    {
-	append("http://", _, Url);append("https://", _, Url)
-    }.
+    inline_text_ast_(Ast0).
 
 reference_image_ast_([Node|Ast0]) -->
     "![",
