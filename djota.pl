@@ -276,28 +276,38 @@ ast_html_node_(div_block(ClassName, Block)) -->
 ast_html_node_(div_block(ClassName, Block)) -->
     { nonvar(ClassName), phrase(ast_html_(Block), Html) },
     "<div class=\"", ClassName, "\">", Html, "</div>".
-ast_html_node_(link(Name, Url)) -->
-    format_("<a href=\"~s\">~s</a>", [Url, Name]).
-ast_html_node_(image(AltText, Url)) -->
-    format_("<img alt=\"~s\" src=\"~s\">", [AltText, Url]).
-ast_html_node_(verbatim(Text)) -->
-    "<code>", Text, "</code>".
-ast_html_node_(emphasis(Child)) -->
+ast_html_node_(link(Name, Url, Attrs)) -->
+    { attrs_html(Attrs, AttrsHtml) },
+    format_("<a href=\"~s\"~s>~s</a>", [Url, AttrsHtml, Name]).
+ast_html_node_(image(AltText, Url, Attrs)) -->
+    { attrs_html(Attrs, AttrsHtml) },    
+    format_("<img alt=\"~s\" src=\"~s\" ~s>", [AltText, Url, AttrsHtml]).
+ast_html_node_(verbatim(Text, Attrs)) -->
+    { attrs_html(Attrs, AttrsHtml) },    
+    "<code", AttrsHtml, ">", Text, "</code>".
+ast_html_node_(emphasis(Child, Attrs)) -->
     { phrase(ast_html_(Child), ChildHtml) },
-    "<em>", ChildHtml, "</em>".
-ast_html_node_(strong(Child)) -->
+    { attrs_html(Attrs, AttrsHtml) },
+    "<em", AttrsHtml,">", ChildHtml, "</em>".
+ast_html_node_(strong(Child, Attrs)) -->
     { phrase(ast_html_(Child), ChildHtml) },
-    "<strong>", ChildHtml, "</strong>".
-ast_html_node_(highlight(Str)) -->
-    "<mark>", Str, "</mark>".
-ast_html_node_(superscript(Str)) -->
-    "<sup>", Str, "</sup>".
-ast_html_node_(subscript(Str)) -->
-    "<sub>", Str, "</sub>".
-ast_html_node_(insert(Str)) -->
-    "<ins>", Str, "</ins>".
-ast_html_node_(delete(Str)) -->
-    "<del>", Str, "</del>".
+    { attrs_html(Attrs, AttrsHtml) },    
+    "<strong", AttrsHtml, ">", ChildHtml, "</strong>".
+ast_html_node_(highlight(Str, Attrs)) -->
+    { attrs_html(Attrs, AttrsHtml) },    
+    "<mark", AttrsHtml, ">", Str, "</mark>".
+ast_html_node_(superscript(Str, Attrs)) -->
+    { attrs_html(Attrs, AttrsHtml) },        
+    "<sup", AttrsHtml, ">", Str, "</sup>".
+ast_html_node_(subscript(Str, Attrs)) -->
+    { attrs_html(Attrs, AttrsHtml) },    
+    "<sub", AttrsHtml, ">", Str, "</sub>".
+ast_html_node_(insert(Str, Attrs)) -->
+    { attrs_html(Attrs, AttrsHtml) },
+    "<ins", AttrsHtml, ">", Str, "</ins>".
+ast_html_node_(delete(Str, Attrs)) -->
+    { attrs_html(Attrs, AttrsHtml) },    
+    "<del", AttrsHtml, ">", Str, "</del>".
 ast_html_node_(str(Str)) -->
     Str.
 
@@ -337,6 +347,12 @@ escape_html_(Html) -->
 escape_html_([Char|Html0]) -->
     [Char],
     escape_html_(Html0).
+
+attrs_html([], "").
+attrs_html([Key-Value|Xs], Html) :-
+    attrs_html(Xs, Html1),
+    phrase(format_(" ~s=\"~s\"", [Key, Value]), Html0),
+    append(Html0, Html1, Html).
 
 char(X) -->
     [X],
@@ -403,37 +419,42 @@ inline_text_ast_(Ast) -->
 inline_text_ast_([]) -->
     [].
 
-insert_ast_([insert(Str)|Ast0]) -->
+insert_ast_([insert(Str, Attrs)|Ast0]) -->
     "{+",
     seq(Str),
     "+}",
+    inline_attr_ast_(Attrs),    
     inline_text_ast_(Ast0).
 
-delete_ast_([delete(Str)|Ast0]) -->
+delete_ast_([delete(Str, Attrs)|Ast0]) -->
     "{-",
     seq(Str),
     "-}",
+    inline_attr_ast_(Attrs),    
     inline_text_ast_(Ast0).
 
-superscript_ast_([superscript(Str)|Ast0]) -->
+superscript_ast_([superscript(Str, Attrs)|Ast0]) -->
     ( "^" | "{^" ),
     seq(Str),
     ( "^" | "^}" ),
+    inline_attr_ast_(Attrs),    
     inline_text_ast_(Ast0).
 
-subscript_ast_([subscript(Str)|Ast0]) -->
+subscript_ast_([subscript(Str, Attrs)|Ast0]) -->
     ( "~" | "{~" ),
     seq(Str),
     ( "~" | "~}" ),
+    inline_attr_ast_(Attrs),    
     inline_text_ast_(Ast0).
 
-highlight_ast_([highlight(Str)|Ast0]) -->
+highlight_ast_([highlight(Str, Attrs)|Ast0]) -->
     "{=",
     seq(Str),
     "=}",
+    inline_attr_ast_(Attrs),    
     inline_text_ast_(Ast0).
 
-emphasis_ast_([emphasis(InlineAst)|Ast0]) -->
+emphasis_ast_([emphasis(InlineAst, Attrs)|Ast0]) -->
     ( ("_", look_ahead(T), { T \= ' ' }) | "{_" ),
     seq(Inline),
     "_",
@@ -442,16 +463,18 @@ emphasis_ast_([emphasis(InlineAst)|Ast0]) -->
 	G \= ' ',
 	inline_text_ast(Inline, InlineAst)
     },
+    inline_attr_ast_(Attrs),    
     inline_text_ast_(Ast0).
 
-emphasis_ast_([emphasis(InlineAst)|Ast0]) -->
+emphasis_ast_([emphasis(InlineAst, Attrs)|Ast0]) -->
     ( ("_", look_ahead(T), { T \= ' ' }) | "{_" ),
     seq(Inline),
     "_}",
     { inline_text_ast(Inline, InlineAst) },
+    inline_attr_ast_(Attrs),    
     inline_text_ast_(Ast0).
 
-strong_ast_([strong(InlineAst)|Ast0]) -->
+strong_ast_([strong(InlineAst, Attrs)|Ast0]) -->
     ( ("*", look_ahead(T), { T \= ' ' }) | "{*" ),
     seq(Inline),
     "*",
@@ -460,18 +483,21 @@ strong_ast_([strong(InlineAst)|Ast0]) -->
 	G \= ' ',
 	inline_text_ast(Inline, InlineAst)
     },
+    inline_attr_ast_(Attrs),    
     inline_text_ast_(Ast0).
 
-strong_ast_([strong(InlineAst)|Ast0]) -->
+strong_ast_([strong(InlineAst, Attrs)|Ast0]) -->
     ( ("*", look_ahead(T), { T \= ' ' }) | "{*" ),
     seq(Inline),
     "*}",
     { inline_text_ast(Inline, InlineAst) },
+    inline_attr_ast_(Attrs),
     inline_text_ast_(Ast0).
 
-verbatim_ast_([verbatim(Str)|Ast0]) -->
+verbatim_ast_([verbatim(Str, Attrs)|Ast0]) -->
     backticks(N, _),
     backticks_end(N, Str),
+    inline_attr_ast_(Attrs),
     inline_text_ast_(Ast0).
 
 backticks_end(N, Str) -->
@@ -498,11 +524,12 @@ colons(N) -->
     { N is N0 + 1 }.
 colons(1) --> ":".
 
-autolink_ast_([link(Url, Url)|Ast0]) -->
+autolink_ast_([link(Url, Url, Attrs)|Ast0]) -->
     { append("http://", _, Url); append("https://", _, Url) },
     "<",
     seq(Url),
     ">",
+    inline_attr_ast_(Attrs),
     inline_text_ast_(Ast0).
 
 reference_image_ast_([Node|Ast0]) -->
@@ -519,12 +546,13 @@ reference_image_ast_([Node|Ast0]) -->
 	)
     }.
 
-inline_image_ast_([image(AltText, Url)|Ast0]) -->
+inline_image_ast_([image(AltText, Url, Attrs)|Ast0]) -->
     "![",
     seq(AltText),
     "](",
     seq(Url),
     ")",
+    inline_attr_ast_(Attrs),
     inline_text_ast_(Ast0).
 
 reference_link_ast_([Node|Ast0]) -->
@@ -541,12 +569,13 @@ reference_link_ast_([Node|Ast0]) -->
 	)
     }.
 
-inline_link_ast_([link(LinkText, LinkUrl)|Ast0]) -->
+inline_link_ast_([link(LinkText, LinkUrl, Attrs)|Ast0]) -->
     "[",
     seq(LinkText),
     "](",
     seq(LinkUrl),
     ")",
+    inline_attr_ast_(Attrs),
     inline_text_ast_(Ast0).
 
 str_ast_(Ast) -->
@@ -564,7 +593,7 @@ str_ast_(Ast) -->
 str_ast_([str([Char])]) -->
     "\\",
     [Char],
-    inline_text_ast_([]).
+    inline_text_ast_([]).    
 
 str_ast_(Ast) -->
     [Char],
@@ -580,6 +609,42 @@ str_ast_(Ast) -->
 str_ast_([str([Char])]) -->
     [Char],
     inline_text_ast_([]).
+
+inline_attr_ast_(Attrs) -->
+    inline_attr_ast_single_(Attr0),
+    inline_attr_ast_(Attr1),
+    { append(Attr0, Attr1, Attrs) }.
+inline_attr_ast_([]) --> [].
+
+inline_attr_ast_single_(Attrs) -->
+    "{",
+    seq(AttrText),
+    "}",
+    { phrase(attr_pairs(Attrs), AttrText) }.
+
+
+attr_pairs(["id"-Name|Xs]) -->
+    "#", seq(Name), whites(N), { N > 0 }, attr_pairs(Xs).
+
+attr_pairs(["id"-Name]) -->
+    "#", seq(Name), whites(0).
+
+attr_pairs(["class"-Name|Xs]) -->
+    ".", seq(Name), whites(N), { N > 0 }, attr_pairs(Xs).
+attr_pairs(["class"-Name]) -->
+    ".", seq(Name), whites(0).
+
+attr_pairs([Key-Value|Xs]) -->
+    seq(Key), { length(Key, N), N > 0 },
+    "=",
+    seq(Value), { length(Value, M), M > 0},
+    whites(O), { O > 0 }, attr_pairs(Xs).
+
+attr_pairs([Key-Value]) -->
+    seq(Key), { length(Key, N), N > 0 },
+    "=",
+    seq(Value), { length(Value, M), M > 0},
+    whites(0).
 
 
 look_ahead(T), [T] --> [T].
