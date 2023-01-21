@@ -276,12 +276,13 @@ ast_html_node_(div_block(ClassName, Block)) -->
 ast_html_node_(div_block(ClassName, Block)) -->
     { nonvar(ClassName), phrase(ast_html_(Block), Html) },
     "<div class=\"", ClassName, "\">", Html, "</div>".
-ast_html_node_(link(Name, Url, Attrs)) -->
+ast_html_node_(link(TextAst, Url, Attrs)) -->
+    { phrase(ast_html_(TextAst), TextHtml) },
     { attrs_html(Attrs, AttrsHtml) },
-    format_("<a href=\"~s\"~s>~s</a>", [Url, AttrsHtml, Name]).
+    format_("<a href=\"~s\"~s>~s</a>", [Url, AttrsHtml, TextHtml]).
 ast_html_node_(image(AltText, Url, Attrs)) -->
     { attrs_html(Attrs, AttrsHtml) },    
-    format_("<img alt=\"~s\" src=\"~s\" ~s>", [AltText, Url, AttrsHtml]).
+    format_("<img alt=\"~s\" src=\"~s\"~s>", [AltText, Url, AttrsHtml]).
 ast_html_node_(verbatim(Text, Attrs)) -->
     { attrs_html(Attrs, AttrsHtml) },    
     "<code", AttrsHtml, ">", Text, "</code>".
@@ -569,12 +570,13 @@ reference_link_ast_([Node|Ast0]) -->
 	)
     }.
 
-inline_link_ast_([link(LinkText, LinkUrl, Attrs)|Ast0]) -->
+inline_link_ast_([link(LinkAst, LinkUrl, Attrs)|Ast0]) -->
     "[",
     seq(LinkText),
     "](",
     seq(LinkUrl),
     ")",
+    { inline_text_ast(LinkText, LinkAst) },
     inline_attr_ast_(Attrs),
     inline_text_ast_(Ast0).
 

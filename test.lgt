@@ -9,7 +9,7 @@ test(backslash) :-
     djota:djot("Hello \\* Djota", "<p>Hello * Djota</p>").
 
 test(link_ast) :-
-    djota:inline_text_ast("My link [link](http://example.com) hola", [str("My link "),link("link","http://example.com", []),str(" hola")]),
+    djota:inline_text_ast("My link [link](http://example.com) hola", [str("My link "),link([str("link")],"http://example.com", []),str(" hola")]),
     djota:inline_text_ast("[My link text][foo bar]", [link_ref("My link text","foo bar")]).
 
 test(link) :-
@@ -20,7 +20,7 @@ test(image_ast) :-
     djota:inline_text_ast("![picture of a cat][cat]", [image_ref("picture of a cat", "cat")]).
 
 test(image) :-
-    djota:djot("![picture of a cat](cat.jpg)", "<p><img alt=\"picture of a cat\" src=\"cat.jpg\" ></p>").
+    djota:djot("![picture of a cat](cat.jpg)", "<p><img alt=\"picture of a cat\" src=\"cat.jpg\"></p>").
 
 test(autolink_ast) :-
     djota:inline_text_ast("Welcome to <https://www.scryer.pl>!", [str("Welcome to "),link("https://www.scryer.pl","https://www.scryer.pl", []),str("!")]).
@@ -100,6 +100,9 @@ test(div_block) :-
     djota:djot("::: warning\nHere is a paragraph.\n\nAnd here is another.\n:::", "<div class=\"warning\"><p>Here is a paragraph.</p><p>And here is another.</p></div>").
 
 test(attr_pairs) :-
-    djota:djot_ast("[Hola](/){.blue}{#id hola=hello} hola", [paragraph([link("Hola","/",["class"-"blue","id"-"id","hola"-"hello"]),str(" hola")])]).
+    djota:djot_ast("[Hola](/){.blue}{#id hola=hello} hola", [paragraph([link([str("Hola")],"/",["class"-"blue","id"-"id","hola"-"hello"]),str(" hola")])]).
+
+test(link_emphasis) :-
+    djota:djot("CLP(B) is an instance of the general [CLP(_X_) scheme](#clp)", "<p>CLP(B) is an instance of the general <a href=\"#clp\">CLP(<em>X</em>) scheme</a></p>").
 
 :- end_object.
