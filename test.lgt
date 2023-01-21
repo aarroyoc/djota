@@ -105,4 +105,11 @@ test(attr_pairs) :-
 test(link_emphasis) :-
     djota:djot("CLP(B) is an instance of the general [CLP(_X_) scheme](#clp)", "<p>CLP(B) is an instance of the general <a href=\"#clp\">CLP(<em>X</em>) scheme</a></p>").
 
+test(table_ast) :-
+    djota:djot_ast("| 1 | 2 |\n| 3 | 4 | 5 |", [table([row([[str(" 1 ")],[str(" 2 ")]]),row([[str(" 3 ")],[str(" 4 ")],[str(" 5 ")]])])]).
+
+test(table) :-
+    djota:djot("| 1 | 2 |\n| 3 | 4 | 5 |", "<table><tr><td> 1 </td><td> 2 </td></tr><tr><td> 3 </td><td> 4 </td><td> 5 </td></tr></table>"),
+    djota:djot("|fruit|price|\n|---|---:|\n|apple|4|\n|banana|10|", "<table><tr><th>fruit</th><th>price</th></tr><tr><td>apple</td><td style=\"text-align:right;\">4</td></tr><tr><td>banana</td><td style=\"text-align:right;\">10</td></tr></table>").
+
 :- end_object.

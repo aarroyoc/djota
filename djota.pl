@@ -49,6 +49,11 @@ djot_ast_([Line|Lines]) -->
     { phrase(((colons(N), " ", seq(ClassName)) | colons(N), ... ), Line), N >= 3 },
     djot_div_ast_(Lines, N, "", ClassName).
 
+% Pipe table
+djot_ast_([Line|Lines]) -->
+    { phrase(pipe_table(Row), Line) },
+    djot_table_ast_(Lines, [row(Row)]).
+
 % Paragraph
 djot_ast_([Line|Lines]) -->
     { Line \= "" },
@@ -211,6 +216,74 @@ djot_div_ast_([], _, Block, ClassName) -->
     { djot_ast(Block, InsideAst) },
     [div_block(ClassName, InsideAst)].
 
+pipe_table(Row) -->
+    "|",
+    table_row(Row),
+    "|",
+    whites(_).
+
+table_row([Ast|Xs]) -->
+    seq(X), { length(X, N), N > 0, inline_text_ast(X, Ast) },
+    "|",
+    table_row(Xs).
+table_row([Ast]) -->
+    seq(X), { length(X, N), N > 0, inline_text_ast(X, Ast) }.
+
+separator_table(Style) -->
+    "|",
+    table_style(Style),
+    "|",
+    whites(_).
+table_style([none|Xs]) -->
+    dashes,
+    "|",
+    table_style(Xs).
+table_style([none]) -->
+    dashes.
+table_style([left|Xs]) -->
+    ":", dashes,
+    "|",
+    table_style(Xs).
+table_style([left]) -->
+    ":", dashes.
+table_style([right|Xs]) -->
+    dashes, ":",
+    "|",
+    table_style(Xs).
+table_style([right]) -->
+    dashes, ":".
+table_style([center|Xs]) -->
+    ":", dashes, ":",
+    "|",
+    table_style(Xs).
+table_style([center]) -->
+    ":", dashes, ":".
+
+dashes --> "-" | "-", dashes.
+	
+
+djot_table_ast_([Line|Lines], Rows) -->
+    {
+	phrase(separator_table(Style), Line),
+	append(RestRows, [row(Row)], Rows),
+	append(RestRows, [header(Row), set_style(Style)], Rows1)
+    },
+    djot_table_ast_(Lines, Rows1).
+
+djot_table_ast_([Line|Lines], Rows) -->
+    {
+	phrase(pipe_table(Row), Line),
+	append(Rows, [row(Row)], Rows1)
+    },
+    djot_table_ast_(Lines, Rows1).
+    
+djot_table_ast_([Line|Lines], Rows) -->
+    { \+ phrase(pipe_table(_), Line) },
+    [table(Rows)],
+    djot_ast_(Lines).
+djot_table_ast_([], Rows) -->
+    djot_table_ast_([""], Rows).
+
 djot_paragraph_ast_([Line|Lines], Paragraph0) -->
     {
 	Line \= "",
@@ -276,6 +349,10 @@ ast_html_node_(div_block(ClassName, Block)) -->
 ast_html_node_(div_block(ClassName, Block)) -->
     { nonvar(ClassName), phrase(ast_html_(Block), Html) },
     "<div class=\"", ClassName, "\">", Html, "</div>".
+ast_html_node_(table(Rows)) -->
+    "<table>",
+    ast_html_rows_(Rows, []),
+    "</table>".
 ast_html_node_(link(TextAst, Url, Attrs)) -->
     { phrase(ast_html_(TextAst), TextHtml) },
     { attrs_html(Attrs, AttrsHtml) },
@@ -325,6 +402,53 @@ ast_html_node_items_([item([paragraph(Item)])|Items], tight) -->
     Html,
     "</li>",
     ast_html_node_items_(Items, tight).
+
+ast_html_rows_([], _) --> "".
+ast_html_rows_([row(Row)|Rows], Style) -->
+    "<tr>",
+    ast_html_cell_("td", Row, Style),
+    "</tr>",
+    ast_html_rows_(Rows, Style).
+ast_html_rows_([header(Row)|Rows], Style) -->
+    "<tr>",
+    ast_html_cell_("th", Row, Style),
+    "</tr>",
+    ast_html_rows_(Rows, Style).
+
+ast_html_rows_([set_style(Style)|Rows], _) -->
+    ast_html_rows_(Rows, Style).
+
+ast_html_cell_(_, [], _) --> "".
+ast_html_cell_(Type, [X|Xs], [none|Style]) -->
+    { phrase(ast_html_(X), Html) },
+    "<", Type, ">",
+    Html,
+    "</", Type, ">",
+    ast_html_cell_(Type, Xs, Style).
+ast_html_cell_(Type, [X|Xs], [left|Style]) -->
+    { phrase(ast_html_(X), Html) },
+    "<", Type, " style=\"text-align:left;\">",
+    Html,
+    "</", Type, ">",
+    ast_html_cell_(Type, Xs, Style).
+ast_html_cell_(Type, [X|Xs], [right|Style]) -->
+    { phrase(ast_html_(X), Html) },
+    "<", Type, " style=\"text-align:right;\">",
+    Html,
+    "</", Type, ">",
+    ast_html_cell_(Type, Xs, Style).
+ast_html_cell_(Type, [X|Xs], [center|Style]) -->
+    { phrase(ast_html_(X), Html) },
+    "<", Type, " style=\"text-align:center;\">",
+    Html,
+    "</", Type, ">",
+    ast_html_cell_(Type, Xs, Style).
+ast_html_cell_(Type, [X|Xs], []) -->
+    { phrase(ast_html_(X), Html) },
+    "<", Type, ">",
+    Html,
+    "</", Type, ">",
+    ast_html_cell_(Type, Xs, Style).
 
 escape_html_([]) --> [].
 escape_html_(Html) -->
