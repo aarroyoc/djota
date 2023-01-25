@@ -223,7 +223,14 @@ pipe_table(Row) -->
     whites(_).
 
 table_row([Ast|Xs]) -->
-    seq(X), { length(X, N), N > 0, inline_text_ast(X, Ast) },
+    seq(X), {
+	findall(C, (member(C, X), C = '`'), Cs),
+	length(Cs, CN),
+	0 is CN mod 2,
+	inline_text_ast(X, Ast),
+	append(_, [T], X),
+	dif(T, '\\')
+    },
     "|",
     table_row(Xs).
 table_row([Ast]) -->
@@ -387,7 +394,8 @@ ast_html_node_(delete(Str, Attrs)) -->
     { attrs_html(Attrs, AttrsHtml) },    
     "<del", AttrsHtml, ">", Str, "</del>".
 ast_html_node_(str(Str)) -->
-    Str.
+    { phrase(escape_html_(Html), Str) },
+    Html.
 
 ast_html_node_items_([], _) --> "".
 ast_html_node_items_([item(Item)|Items], loose) -->
