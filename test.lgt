@@ -111,6 +111,7 @@ test(table_ast) :-
 test(table) :-
     djota:djot("| 1 | 2 |\n| 3 | 4 | 5 |", "<table><tr><td> 1 </td><td> 2 </td></tr><tr><td> 3 </td><td> 4 </td><td> 5 </td></tr></table>"),
     djota:djot("|fruit|price|\n|---|---:|\n|apple|4|\n|banana|10|", "<table><tr><th>fruit</th><th>price</th></tr><tr><td>apple</td><td style=\"text-align:right;\">4</td></tr><tr><td>banana</td><td style=\"text-align:right;\">10</td></tr></table>"),
-    djota:djot("| just two \\| `|` | cells in this table |", "<table><tr><td> just two | <code>|</code> </td><td> cells in this table </td></tr></table>").
+    djota:djot("| just two \\| `|` | cells in this table |", "<table><tr><td> just two | <code>|</code> </td><td> cells in this table </td></tr></table>"),
+    djota:djot("| ```~`Ct``` | 1 |", "<table><tr><td> <code>~`Ct</code> </td><td> 1 </td></tr></table>").
 
 :- end_object.

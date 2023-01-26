@@ -223,18 +223,28 @@ pipe_table(Row) -->
     whites(_).
 
 table_row([Ast|Xs]) -->
-    seq(X), {
-	findall(C, (member(C, X), C = '`'), Cs),
-	length(Cs, CN),
-	0 is CN mod 2,
+    table_str(X),
+    {
 	inline_text_ast(X, Ast),
 	append(_, [T], X),
 	dif(T, '\\')
     },
     "|",
     table_row(Xs).
+
 table_row([Ast]) -->
-    seq(X), { length(X, N), N > 0, inline_text_ast(X, Ast) }.
+    table_str(X), { length(X, N), N > 0, inline_text_ast(X, Ast) }.
+
+table_str([]) --> [].
+table_str([X|Xs]) -->
+    [X],
+    { dif(X, '`') },
+    table_str(Xs).
+table_str(X) -->
+    backticks(N, Backticks),
+    backticks_end(N, Str),
+    table_str(Xs),
+    { append(Backticks, Str, Str0), append(Str0, Backticks, Str1), append(Str1, Xs, X) }.
 
 separator_table(Style) -->
     "|",
@@ -456,7 +466,7 @@ ast_html_cell_(Type, [X|Xs], []) -->
     "<", Type, ">",
     Html,
     "</", Type, ">",
-    ast_html_cell_(Type, Xs, Style).
+    ast_html_cell_(Type, Xs, []).
 
 escape_html_([]) --> [].
 escape_html_(Html) -->
