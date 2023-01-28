@@ -357,7 +357,7 @@ ast_html_node_(paragraph(InlineAst, Attrs)) -->
 ast_html_node_(section(N, Header, Child, Attrs)) -->
     { phrase(ast_html_(Child), ChildHtml) },
     { attrs_html(Attrs, AttrsHtml) },
-    format_("<section><h~d~s>~s</h~d>~s</section>", [N, AttrsHtml, Header, N, ChildHtml]).
+    format_("<section~s><h~d>~s</h~d>~s</section>", [AttrsHtml, N, Header, N, ChildHtml]).
 ast_html_node_(blockquote(Child, Attrs)) -->
     { phrase(ast_html_(Child), ChildHtml) },
     { attrs_html(Attrs, AttrsHtml) },    

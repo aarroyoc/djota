@@ -115,6 +115,6 @@ test(table) :-
     djota:djot("| ```~`Ct``` | 1 |", "<table><tr><td> <code>~`Ct</code> </td><td> 1 </td></tr></table>").
 
 test(block_attributes) :-
-    djota:djot("{#water}\n# Coffee\n\nCoffee is perfect", "<section><h1 id=\"water\">Coffee</h1><p>Coffee is perfect</p></section>").
+    djota:djot("{#water}\n# Coffee\n\nCoffee is perfect", "<section id=\"water\"><h1>Coffee</h1><p>Coffee is perfect</p></section>").
 
 :- end_object.
