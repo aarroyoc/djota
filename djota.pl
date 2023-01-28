@@ -171,7 +171,7 @@ djot_heading_ast_([[]|Lines], N, Header, Attrs) -->
     [section(N, Header, SectionAst, Attrs)].
     
 djot_heading_ast_([], N, Header, Attrs) -->
-    djot_heading_ast([""], N, Header, Attrs).
+    djot_heading_ast_([""], N, Header, Attrs).
 
 heading_line(1, Header) --> "# ", seq(Header).
 heading_line(2, Header) --> "## ", seq(Header).
