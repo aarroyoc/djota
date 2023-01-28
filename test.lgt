@@ -79,11 +79,11 @@ test(blockquote) :-
     djota:djot("> This is a block quote.\nAnd lazy", "<blockquote><p>This is a block quote. And lazy</p></blockquote>").
 
 test(list_ast) :-
-    djota:djot_ast("- Hola", [list(type(0, bullet("-"), tight),[item([paragraph([str("Hola")])])])]),
-    djota:djot_ast("- Hola\n- Adios", [list(type(0, bullet("-"), tight),[item([paragraph([str("Hola")])]),item([paragraph([str("Adios")])])])]),
-    djota:djot_ast("- Hola\namigos\n- Adios\namigos", [list(type(0,bullet("-"),tight),[item([paragraph([str("Hola amigos")])]),item([paragraph([str("Adios amigos")])])])]),
-    djota:djot_ast("- Hola\namigos\n\n- Adios\namigos", [list(type(0,bullet("-"),loose),[item([paragraph([str("Hola amigos")])]),item([paragraph([str("Adios amigos")])])])]),    
-    djota:djot_ast("- Hola\namigos\n\n - Sublist\n- Adios\namigos", [list(type(0, bullet("-"), loose),[item([paragraph([str("Hola amigos")]),list(type(0, bullet("-"), tight),[item([paragraph([str("Sublist")])])])]),item([paragraph([str("Adios amigos")])])])]).
+    djota:djot_ast("- Hola", [list(type(0, bullet("-"), tight),[item([paragraph([str("Hola")], [])])], [])]),
+    djota:djot_ast("- Hola\n- Adios", [list(type(0,bullet("-"),tight),[item([paragraph([str("Hola")],[])]),item([paragraph([str("Adios")],[])])],[])]),
+    djota:djot_ast("- Hola\namigos\n- Adios\namigos", [list(type(0,bullet("-"),tight),[item([paragraph([str("Hola amigos")], [])]),item([paragraph([str("Adios amigos")], [])])], [])]),
+    djota:djot_ast("- Hola\namigos\n\n- Adios\namigos", [list(type(0,bullet("-"),loose),[item([paragraph([str("Hola amigos")], [])]),item([paragraph([str("Adios amigos")], [])])], [])]),    
+    djota:djot_ast("- Hola\namigos\n\n - Sublist\n- Adios\namigos", [list(type(0, bullet("-"), loose),[item([paragraph([str("Hola amigos")], []),list(type(0, bullet("-"), tight),[item([paragraph([str("Sublist")], [])])], [])]),item([paragraph([str("Adios amigos")], [])])], [])]).
 
 test(list) :-
     djota:djot("- Hola\namigos\n\n - Sublist\n- Adios\namigos", "<ul><li><p>Hola amigos</p><ul><li>Sublist</li></ul></li><li><p>Adios amigos</p></li></ul>").
@@ -100,18 +100,21 @@ test(div_block) :-
     djota:djot("::: warning\nHere is a paragraph.\n\nAnd here is another.\n:::", "<div class=\"warning\"><p>Here is a paragraph.</p><p>And here is another.</p></div>").
 
 test(attr_pairs) :-
-    djota:djot_ast("[Hola](/){.blue}{#id hola=hello} hola", [paragraph([link([str("Hola")],"/",["class"-"blue","id"-"id","hola"-"hello"]),str(" hola")])]).
+    djota:djot_ast("[Hola](/){.blue}{#id hola=hello} hola", [paragraph([link([str("Hola")],"/",["class"-"blue","id"-"id","hola"-"hello"]),str(" hola")], [])]).
 
 test(link_emphasis) :-
     djota:djot("CLP(B) is an instance of the general [CLP(_X_) scheme](#clp)", "<p>CLP(B) is an instance of the general <a href=\"#clp\">CLP(<em>X</em>) scheme</a></p>").
 
 test(table_ast) :-
-    djota:djot_ast("| 1 | 2 |\n| 3 | 4 | 5 |", [table([row([[str(" 1 ")],[str(" 2 ")]]),row([[str(" 3 ")],[str(" 4 ")],[str(" 5 ")]])])]).
+    djota:djot_ast("| 1 | 2 |\n| 3 | 4 | 5 |", [table([row([[str(" 1 ")],[str(" 2 ")]]),row([[str(" 3 ")],[str(" 4 ")],[str(" 5 ")]])], [])]).
 
 test(table) :-
     djota:djot("| 1 | 2 |\n| 3 | 4 | 5 |", "<table><tr><td> 1 </td><td> 2 </td></tr><tr><td> 3 </td><td> 4 </td><td> 5 </td></tr></table>"),
     djota:djot("|fruit|price|\n|---|---:|\n|apple|4|\n|banana|10|", "<table><tr><th>fruit</th><th>price</th></tr><tr><td>apple</td><td style=\"text-align:right;\">4</td></tr><tr><td>banana</td><td style=\"text-align:right;\">10</td></tr></table>"),
     djota:djot("| just two \\| `|` | cells in this table |", "<table><tr><td> just two | <code>|</code> </td><td> cells in this table </td></tr></table>"),
     djota:djot("| ```~`Ct``` | 1 |", "<table><tr><td> <code>~`Ct</code> </td><td> 1 </td></tr></table>").
+
+test(block_attributes) :-
+    djota:djot("{#water}\n# Coffee\n\nCoffee is perfect", "<section><h1 id=\"water\">Coffee</h1><p>Coffee is perfect</p></section>").
 
 :- end_object.

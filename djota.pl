@@ -14,121 +14,128 @@ djot(Djot, Html) :-
 
 djot_ast(Djot, Ast) :-
     once(phrase(lines(Lines), Djot)),
-    once(phrase(djot_ast_(Lines), Ast)).    
+    once(phrase(djot_ast_(Lines, []), Ast)).    
 
 % From Djot source to AST
 
 % Thematic break
-djot_ast_([Line|Lines]) -->
+djot_ast_([Line|Lines], Attrs) -->
     { phrase(thematic_break_line(0), Line) },
-    [thematic_break],
-    djot_ast_(Lines).
+    [thematic_break(Attrs)],
+    djot_ast_(Lines, []).
 
 % Heading
-djot_ast_([Line|Lines]) -->
+djot_ast_([Line|Lines], Attrs) -->
     { phrase(heading_line(N, Header), Line) },
-    djot_heading_ast_(Lines, N, Header).
+    djot_heading_ast_(Lines, N, Header, Attrs).
 
 % Blockquote
-djot_ast_([Line|Lines]) -->
+djot_ast_([Line|Lines], Attrs) -->
     { phrase(blockquote_line(Text), Line) },
-    djot_blockquote_ast_(Lines, Text).
+    djot_blockquote_ast_(Lines, Text, Attrs).
 
 % List
-djot_ast_([Line|Lines]) -->
+djot_ast_([Line|Lines], Attrs) -->
     { phrase(list_line(Type, Text), Line) },
-    djot_list_ast_(Type, Lines, Text, [], continue).
+    djot_list_ast_(Type, Lines, Text, [], continue, Attrs).
 
 % Code block
-djot_ast_([Line|Lines]) -->
+djot_ast_([Line|Lines], Attrs) -->
     { phrase(((backticks(N, _), " ", seq(Spec)) | backticks(N, _), ... ), Line), N >= 3 },
-    djot_code_ast_(Lines, N, "", Spec).
+    djot_code_ast_(Lines, N, "", Spec, Attrs).
 
 % Div block
-djot_ast_([Line|Lines]) -->
+djot_ast_([Line|Lines], Attrs) -->
     { phrase(((colons(N), " ", seq(ClassName)) | colons(N), ... ), Line), N >= 3 },
-    djot_div_ast_(Lines, N, "", ClassName).
+    { append(["class"-ClassName], Attrs, Attrs1) },
+    djot_div_ast_(Lines, N, "", Attrs1).
 
 % Pipe table
-djot_ast_([Line|Lines]) -->
+djot_ast_([Line|Lines], Attrs) -->
     { phrase(pipe_table(Row), Line) },
-    djot_table_ast_(Lines, [row(Row)]).
+    djot_table_ast_(Lines, [row(Row)], Attrs).
+
+% Block attribute
+djot_ast_([Line|Lines], Attrs) -->
+    { phrase(inline_attr_ast_(Attrs1), Line), append(Attrs, Attrs1, Attrs2) },
+    djot_ast_(Lines, Attrs2).
+    
 
 % Paragraph
-djot_ast_([Line|Lines]) -->
+djot_ast_([Line|Lines], Attrs) -->
     { Line \= "" },
-    djot_paragraph_ast_([Line|Lines], "").
+    djot_paragraph_ast_([Line|Lines], "", Attrs).
 
 % Empty line
-djot_ast_([[]|Lines]) -->
-    djot_ast_(Lines).
+djot_ast_([[]|Lines], Attrs) -->
+    djot_ast_(Lines, Attrs).
 % No more lines
-djot_ast_([]) --> [].
+djot_ast_([], _) --> [].
 
 % Code block
-djot_code_ast_([Line|Lines], N, Code0, Spec) -->
+djot_code_ast_([Line|Lines], N, Code0, Spec, Attrs) -->
     { \+ ( phrase(backticks(M, _), Line), M >= N), append(Code0, ['\n'|Line], Code) },
-    djot_code_ast_(Lines, N, Code, Spec).
+    djot_code_ast_(Lines, N, Code, Spec, Attrs).
 
-djot_code_ast_([Line|Lines], N, Code0, Spec) -->
+djot_code_ast_([Line|Lines], N, Code0, Spec, Attrs) -->
     { phrase(backticks(M, _), Line), M >= N },
-    [code(Spec, Code0)],
-    djot_ast_(Lines).
+    [code(Spec, Code0, Attrs)],
+    djot_ast_(Lines, []).
 
-djot_code_ast_([], _, Code0, Spec) -->
-    [code(Spec, Code0)].
+djot_code_ast_([], _, Code0, Spec, Attrs) -->
+    [code(Spec, Code0, Attrs)].
 
 % List: Line of list type same as current list
-djot_list_ast_(type(Level, Type, Mode), [Line|Lines], CurrentItem, Items, _) -->
+djot_list_ast_(type(Level, Type, Mode), [Line|Lines], CurrentItem, Items, _, Attrs) -->
     {
 	phrase(list_line(type(Level, Type, _), Text), Line),
 	djot_ast(CurrentItem, ItemAst),
 	append(Items, [item(ItemAst)], NewItems)
     },
-    djot_list_ast_(type(Level, Type, Mode), Lines, Text, NewItems, continue).
+    djot_list_ast_(type(Level, Type, Mode), Lines, Text, NewItems, continue, Attrs).
 % List: Line non indented in continue mode
-djot_list_ast_(Type, [Line|Lines], CurrentItem, Items, continue) -->
+djot_list_ast_(Type, [Line|Lines], CurrentItem, Items, continue, Attrs) -->
     {
 	Line \= "",
 	\+ phrase(list_line(_, _), Line),
 	append(CurrentItem, ['\n'|Line], CurrentItem1)
     },
-    djot_list_ast_(Type, Lines, CurrentItem1, Items, continue).
+    djot_list_ast_(Type, Lines, CurrentItem1, Items, continue, Attrs).
 % List: Empty line
-djot_list_ast_(type(Level, Type, _), [Line|Lines], CurrentItem, Items, _) -->
+djot_list_ast_(type(Level, Type, _), [Line|Lines], CurrentItem, Items, _, Attrs) -->
     {
 	phrase(whites(_), Line),
 	append(CurrentItem, ['\n'|Line], CurrentItem1)
     },
-    djot_list_ast_(type(Level, Type, loose), Lines, CurrentItem1, Items, jump).
+    djot_list_ast_(type(Level, Type, loose), Lines, CurrentItem1, Items, jump, Attrs).
 
 % List: Line indented in jump mode
-djot_list_ast_(type(Level, Type, Mode), [Line|Lines], CurrentItem, Items, jump) -->
+djot_list_ast_(type(Level, Type, Mode), [Line|Lines], CurrentItem, Items, jump, Attrs) -->
     {
 	phrase((whites(W), seq(Text)), Line),
 	W > Level,
 	append(CurrentItem, ['\n'|Text], CurrentItem1)
     },
-    djot_list_ast_(type(Level, Type, Mode), Lines, CurrentItem1, Items, jump).
+    djot_list_ast_(type(Level, Type, Mode), Lines, CurrentItem1, Items, jump, Attrs).
 
 % List: Line not indented in jump mode
-djot_list_ast_(type(Level, Type, Mode), [Line|Lines], CurrentItem, Items, jump) -->
+djot_list_ast_(type(Level, Type, Mode), [Line|Lines], CurrentItem, Items, jump, Attrs) -->
     {
 	phrase((whites(W), seq(_)), Line),
 	W =< Level,
 	djot_ast(CurrentItem, ItemAst),
 	append(Items, [item(ItemAst)], NewItems)	
     },
-    [list(type(Level, Type, Mode), NewItems)],
-    djot_ast_([Line|Lines]).
+    [list(type(Level, Type, Mode), NewItems, Attrs)],
+    djot_ast_([Line|Lines], []).
 
 % List: No more lines
-djot_list_ast_(Type, [], CurrentItem, Items, _) -->
+djot_list_ast_(Type, [], CurrentItem, Items, _, Attrs) -->
     {
 	djot_ast(CurrentItem, ItemAst),
         append(Items, [item(ItemAst)], NewItems)
     },
-    [list(Type, NewItems)].
+    [list(Type, NewItems, Attrs)].
 
 
 list_type(bullet("-")) --> "-".
@@ -143,28 +150,28 @@ whites(N) -->
     whites(N0),
     { N is N0 + 1}.
 
-djot_heading_ast_([Line|Lines], N, Header) -->
+djot_heading_ast_([Line|Lines], N, Header, Attrs) -->
     { phrase(heading_line(N, Header), Line), append(Header, [' '|Line], Header1) },
-    djot_heading_ast_(Lines, N, Header1).
+    djot_heading_ast_(Lines, N, Header1, Attrs).
 
-djot_heading_ast_([[]|Lines], N, Header) -->
+djot_heading_ast_([[]|Lines], N, Header, Attrs) -->
     {
 	append(SectionLines, [HeadingLine|Rest], Lines),
 	phrase(heading_line(NextN, _), HeadingLine),
 	NextN =< N,
-	phrase(djot_ast_(SectionLines), SectionAst)
+	phrase(djot_ast_(SectionLines, []), SectionAst)
     },
-    [section(N, Header, SectionAst)],
-    djot_ast_([HeadingLine|Rest]).
+    [section(N, Header, SectionAst, Attrs)],
+    djot_ast_([HeadingLine|Rest], []).
 
-djot_heading_ast_([[]|Lines], N, Header) -->
+djot_heading_ast_([[]|Lines], N, Header, Attrs) -->
     {
-	phrase(djot_ast_(Lines), SectionAst)
+	phrase(djot_ast_(Lines, []), SectionAst)
     },
-    [section(N, Header, SectionAst)].
+    [section(N, Header, SectionAst, Attrs)].
     
-djot_heading_ast_([], N, Header) -->
-    djot_heading_ast([""], N, Header).
+djot_heading_ast_([], N, Header, Attrs) -->
+    djot_heading_ast([""], N, Header, Attrs).
 
 heading_line(1, Header) --> "# ", seq(Header).
 heading_line(2, Header) --> "## ", seq(Header).
@@ -181,21 +188,21 @@ section_lines([], N) -->
     heading_line(N, _).
 section_lines([], _) --> [].
 
-djot_blockquote_ast_([Line|Lines], Block) -->
+djot_blockquote_ast_([Line|Lines], Block, Attrs) -->
     { phrase(blockquote_line(Text), Line), append(Block, ['\n'|Text], Block1) },
-    djot_blockquote_ast_(Lines, Block1).
+    djot_blockquote_ast_(Lines, Block1, Attrs).
 
-djot_blockquote_ast_([Line|Lines], Block) -->
+djot_blockquote_ast_([Line|Lines], Block, Attrs) -->
     { Line \= "", \+ phrase(blockquote_line(_), Line), append(Block, ['\n'|Line], Block1) },
-    djot_blockquote_ast_(Lines, Block1).
+    djot_blockquote_ast_(Lines, Block1, Attrs).
 
-djot_blockquote_ast_([""|Lines], Block) -->
+djot_blockquote_ast_([""|Lines], Block, Attrs) -->
     { djot_ast(Block, InsideAst) },
-    [blockquote(InsideAst)],
-    djot_ast_(Lines).
+    [blockquote(InsideAst, Attrs)],
+    djot_ast_(Lines, []).
 
-djot_blockquote_ast_([], Block) -->
-    djot_blockquote_ast_([""], Block).
+djot_blockquote_ast_([], Block, Attrs) -->
+    djot_blockquote_ast_([""], Block, Attrs).
 
 blockquote_line(Text) -->
     "> ", seq(Text).
@@ -203,18 +210,18 @@ blockquote_line(Text) -->
 blockquote_line("") -->
     ">".
 
-djot_div_ast_([Line|Lines], N, Block, ClassName) -->
+djot_div_ast_([Line|Lines], N, Block, Attrs) -->
     { \+ (phrase(colons(M), Line), M >= N), append(Block, ['\n'|Line], Block1) },
-    djot_div_ast_(Lines, N, Block1, ClassName).
+    djot_div_ast_(Lines, N, Block1, Attrs).
 
-djot_div_ast_([Line|Lines], N, Block, ClassName) -->
+djot_div_ast_([Line|Lines], N, Block, Attrs) -->
     { phrase(colons(M), Line), M >= N, djot_ast(Block, InsideAst) },
-    [div_block(ClassName, InsideAst)],
-    djot_ast_(Lines).
+    [div_block(InsideAst, Attrs)],
+    djot_ast_(Lines, []).
 
-djot_div_ast_([], _, Block, ClassName) -->
+djot_div_ast_([], _, Block, Attrs) -->
     { djot_ast(Block, InsideAst) },
-    [div_block(ClassName, InsideAst)].
+    [div_block(InsideAst, Attrs)].
 
 pipe_table(Row) -->
     "|",
@@ -279,29 +286,29 @@ table_style([center]) -->
 dashes --> "-" | "-", dashes.
 	
 
-djot_table_ast_([Line|Lines], Rows) -->
+djot_table_ast_([Line|Lines], Rows, Attrs) -->
     {
 	phrase(separator_table(Style), Line),
 	append(RestRows, [row(Row)], Rows),
 	append(RestRows, [header(Row), set_style(Style)], Rows1)
     },
-    djot_table_ast_(Lines, Rows1).
+    djot_table_ast_(Lines, Rows1, Attrs).
 
-djot_table_ast_([Line|Lines], Rows) -->
+djot_table_ast_([Line|Lines], Rows, Attrs) -->
     {
 	phrase(pipe_table(Row), Line),
 	append(Rows, [row(Row)], Rows1)
     },
-    djot_table_ast_(Lines, Rows1).
+    djot_table_ast_(Lines, Rows1, Attrs).
     
-djot_table_ast_([Line|Lines], Rows) -->
+djot_table_ast_([Line|Lines], Rows, Attrs) -->
     { \+ phrase(pipe_table(_), Line) },
-    [table(Rows)],
-    djot_ast_(Lines).
-djot_table_ast_([], Rows) -->
-    djot_table_ast_([""], Rows).
+    [table(Rows, Attrs)],
+    djot_ast_(Lines, []).
+djot_table_ast_([], Rows, Attrs) -->
+    djot_table_ast_([""], Rows, Attrs).
 
-djot_paragraph_ast_([Line|Lines], Paragraph0) -->
+djot_paragraph_ast_([Line|Lines], Paragraph0, Attrs) -->
     {
 	Line \= "",
 	(
@@ -310,15 +317,15 @@ djot_paragraph_ast_([Line|Lines], Paragraph0) -->
 	;   append(Paragraph0, [' '|Line], Paragraph1)
 	)
     },
-    djot_paragraph_ast_(Lines, Paragraph1).
+    djot_paragraph_ast_(Lines, Paragraph1, Attrs).
 
-djot_paragraph_ast_([""|Lines], Paragraph) -->
+djot_paragraph_ast_([""|Lines], Paragraph, Attrs) -->
     { phrase(inline_text_ast_(InlineAst), Paragraph) },
-    [paragraph(InlineAst)],
-    djot_ast_(Lines).
+    [paragraph(InlineAst, Attrs)],
+    djot_ast_(Lines, []).
 
-djot_paragraph_ast_([], Paragraph) -->
-    djot_paragraph_ast_([""], Paragraph).
+djot_paragraph_ast_([], Paragraph, Attrs) -->
+    djot_paragraph_ast_([""], Paragraph, Attrs).
 
 thematic_break_line(N) -->
     (" "|"\t"),
@@ -339,35 +346,40 @@ ast_html_([X|Xs]) -->
     ast_html_node_(X),
     ast_html_(Xs).
 
-ast_html_node_(thematic_break) -->
-    "<hr>".
-ast_html_node_(paragraph(InlineAst)) -->
-    "<p>",
+ast_html_node_(thematic_break(Attrs)) -->
+    { attrs_html(Attrs, AttrsHtml) },
+    "<hr", AttrsHtml,">".
+ast_html_node_(paragraph(InlineAst, Attrs)) -->
+    { attrs_html(Attrs, AttrsHtml) },
+    "<p", AttrsHtml, ">",
     ast_html_(InlineAst),
     "</p>".
-ast_html_node_(section(N, Header, Child)) -->
+ast_html_node_(section(N, Header, Child, Attrs)) -->
     { phrase(ast_html_(Child), ChildHtml) },
-    format_("<section><h~d>~s</h~d>~s</section>", [N, Header, N, ChildHtml]).
-ast_html_node_(blockquote(Child)) -->
+    { attrs_html(Attrs, AttrsHtml) },
+    format_("<section><h~d~s>~s</h~d>~s</section>", [N, AttrsHtml, Header, N, ChildHtml]).
+ast_html_node_(blockquote(Child, Attrs)) -->
     { phrase(ast_html_(Child), ChildHtml) },
-    "<blockquote>", ChildHtml, "</blockquote>".
-ast_html_node_(list(type(_, bullet(_), Mode), Items)) -->
-    "<ul>",
+    { attrs_html(Attrs, AttrsHtml) },    
+    "<blockquote", AttrsHtml, ">", ChildHtml, "</blockquote>".
+ast_html_node_(list(type(_, bullet(_), Mode), Items, Attrs)) -->
+    { attrs_html(Attrs, AttrsHtml) },    
+    "<ul", AttrsHtml, ">",
     ast_html_node_items_(Items, Mode),
     "</ul>".
-ast_html_node_(code(Spec, Code)) -->
+ast_html_node_(code(Spec, Code, Attrs)) -->
     { dif(Spec, "=html"), phrase(escape_html_(Html), Code) },
-    "<pre><code>", Html, "</pre></code>".
-ast_html_node_(code("=html", Html)) -->
+    { attrs_html(Attrs, AttrsHtml) },    
+    "<pre", AttrsHtml, "><code>", Html, "</pre></code>".
+ast_html_node_(code("=html", Html, _)) -->
     Html.
-ast_html_node_(div_block(ClassName, Block)) -->
-    { var(ClassName), phrase(ast_html_(Block), Html) },
-    "<div>", Html, "</div>".
-ast_html_node_(div_block(ClassName, Block)) -->
-    { nonvar(ClassName), phrase(ast_html_(Block), Html) },
-    "<div class=\"", ClassName, "\">", Html, "</div>".
-ast_html_node_(table(Rows)) -->
-    "<table>",
+ast_html_node_(div_block(Block, Attrs)) -->
+    { phrase(ast_html_(Block), Html) },
+    { attrs_html(Attrs, AttrsHtml) },    
+    "<div", AttrsHtml, ">", Html, "</div>".
+ast_html_node_(table(Rows, Attrs)) -->
+    { attrs_html(Attrs, AttrsHtml) },    
+    "<table", AttrsHtml, ">",
     ast_html_rows_(Rows, []),
     "</table>".
 ast_html_node_(link(TextAst, Url, Attrs)) -->
@@ -414,7 +426,7 @@ ast_html_node_items_([item(Item)|Items], loose) -->
     Html,
     "</li>",
     ast_html_node_items_(Items, loose).
-ast_html_node_items_([item([paragraph(Item)])|Items], tight) -->
+ast_html_node_items_([item([paragraph(Item, _)])|Items], tight) -->
     { phrase(ast_html_(Item), Html) },
     "<li>",
     Html,
