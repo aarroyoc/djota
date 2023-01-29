@@ -57,9 +57,8 @@ djot_ast_([Line|Lines], Attrs) -->
 
 % Block attribute
 djot_ast_([Line|Lines], Attrs) -->
-    { phrase(inline_attr_ast_(Attrs1), Line), append(Attrs, Attrs1, Attrs2) },
+    { phrase(inline_attr_ast_single_(Attrs1), Line), append(Attrs, Attrs1, Attrs2) },
     djot_ast_(Lines, Attrs2).
-    
 
 % Paragraph
 djot_ast_([Line|Lines], Attrs) -->
@@ -159,10 +158,12 @@ djot_heading_ast_([[]|Lines], N, Header, Attrs) -->
 	append(SectionLines, [HeadingLine|Rest], Lines),
 	phrase(heading_line(NextN, _), HeadingLine),
 	NextN =< N,
-	phrase(djot_ast_(SectionLines, []), SectionAst)
+	section_lines_block(SectionLines, SectionLines1, BlockAttrs),
+	phrase(djot_ast_(SectionLines1, []), SectionAst),
+	append(BlockAttrs, [HeadingLine|Rest], NextLines)
     },
     [section(N, Header, SectionAst, Attrs)],
-    djot_ast_([HeadingLine|Rest], []).
+    djot_ast_(NextLines, []).
 
 djot_heading_ast_([[]|Lines], N, Header, Attrs) -->
     {
@@ -172,6 +173,15 @@ djot_heading_ast_([[]|Lines], N, Header, Attrs) -->
     
 djot_heading_ast_([], N, Header, Attrs) -->
     djot_heading_ast_([""], N, Header, Attrs).
+
+section_lines_block([], [], []).
+section_lines_block(Lines, LinesOut, Block) :-
+    append(Lines1, [BlockLine], Lines),
+    (
+	phrase(inline_attr_ast_single_(_), BlockLine) ->
+	(section_lines_block(Lines1, LinesOut, Block0), Block = [BlockLine|Block0])
+    ;   ( Lines = LinesOut, Block = [] )
+    ).
 
 heading_line(1, Header) --> "# ", seq(Header).
 heading_line(2, Header) --> "## ", seq(Header).
