@@ -5,6 +5,7 @@
 :- use_module(library(pio)).
 :- use_module(library(lists)).
 :- use_module(library(dif)).
+:- use_module(library(charsio)).
 
 % Block syntax
 
@@ -85,13 +86,13 @@ djot_code_ast_([], _, Code0, Spec, Attrs) -->
     [code(Spec, Code0, Attrs)].
 
 % List: Line of list type same as current list
-djot_list_ast_(type(Level, Type, Mode), [Line|Lines], CurrentItem, Items, _, Attrs) -->
+djot_list_ast_(type(Level, Type, Mode, OrdStart), [Line|Lines], CurrentItem, Items, _, Attrs) -->
     {
-	phrase(list_line(type(Level, Type, _), Text), Line),
+	phrase(list_line(type(Level, Type, _, _), Text), Line),
 	djot_ast(CurrentItem, ItemAst),
 	append(Items, [item(ItemAst)], NewItems)
     },
-    djot_list_ast_(type(Level, Type, Mode), Lines, Text, NewItems, continue, Attrs).
+    djot_list_ast_(type(Level, Type, Mode, OrdStart), Lines, Text, NewItems, continue, Attrs).
 % List: Line non indented in continue mode
 djot_list_ast_(Type, [Line|Lines], CurrentItem, Items, continue, Attrs) -->
     {
@@ -101,31 +102,31 @@ djot_list_ast_(Type, [Line|Lines], CurrentItem, Items, continue, Attrs) -->
     },
     djot_list_ast_(Type, Lines, CurrentItem1, Items, continue, Attrs).
 % List: Empty line
-djot_list_ast_(type(Level, Type, _), [Line|Lines], CurrentItem, Items, _, Attrs) -->
+djot_list_ast_(type(Level, Type, _, OrdStart), [Line|Lines], CurrentItem, Items, _, Attrs) -->
     {
 	phrase(whites(_), Line),
 	append(CurrentItem, ['\n'|Line], CurrentItem1)
     },
-    djot_list_ast_(type(Level, Type, loose), Lines, CurrentItem1, Items, jump, Attrs).
+    djot_list_ast_(type(Level, Type, loose, OrdStart), Lines, CurrentItem1, Items, jump, Attrs).
 
 % List: Line indented in jump mode
-djot_list_ast_(type(Level, Type, Mode), [Line|Lines], CurrentItem, Items, jump, Attrs) -->
+djot_list_ast_(type(Level, Type, Mode, OrdStart), [Line|Lines], CurrentItem, Items, jump, Attrs) -->
     {
 	phrase((whites(W), seq(Text)), Line),
 	W > Level,
 	append(CurrentItem, ['\n'|Text], CurrentItem1)
     },
-    djot_list_ast_(type(Level, Type, Mode), Lines, CurrentItem1, Items, jump, Attrs).
+    djot_list_ast_(type(Level, Type, Mode, OrdStart), Lines, CurrentItem1, Items, jump, Attrs).
 
 % List: Line not indented in jump mode
-djot_list_ast_(type(Level, Type, Mode), [Line|Lines], CurrentItem, Items, jump, Attrs) -->
+djot_list_ast_(type(Level, Type, Mode, OrdStart), [Line|Lines], CurrentItem, Items, jump, Attrs) -->
     {
 	phrase((whites(W), seq(_)), Line),
 	W =< Level,
 	djot_ast(CurrentItem, ItemAst),
 	append(Items, [item(ItemAst)], NewItems)	
     },
-    [list(type(Level, Type, Mode), NewItems, Attrs)],
+    [list(type(Level, Type, Mode, OrdStart), NewItems, Attrs)],
     djot_ast_([Line|Lines], []).
 
 % List: No more lines
@@ -140,8 +141,13 @@ djot_list_ast_(Type, [], CurrentItem, Items, _, Attrs) -->
 list_type(bullet("-")) --> "-".
 list_type(bullet("*")) --> "*".
 list_type(bullet("+")) --> "+".
-list_line(type(Level, Type, tight), Text) -->
-    whites(Level), list_type(Type), " ", seq(Text).
+list_type(decimal(".", N)) --> number_(N), ".".
+list_type(decimal(")", N)) --> number_(N), ")".
+list_type(decimal("()", N)) --> "(", number_(N), ")".
+list_line(type(Level, bullet(BulletType), tight, ""), Text) -->
+    whites(Level), list_type(bullet(BulletType)), " ", seq(Text).
+list_line(type(Level, decimal(DecimalType), tight, OrdStart), Text) -->
+    whites(Level), list_type(decimal(DecimalType, OrdStart)), " ", seq(Text).
 
 whites(0) --> "".
 whites(N) -->
@@ -372,11 +378,16 @@ ast_html_node_(blockquote(Child, Attrs)) -->
     { phrase(ast_html_(Child), ChildHtml) },
     { attrs_html(Attrs, AttrsHtml) },    
     "<blockquote", AttrsHtml, ">", ChildHtml, "</blockquote>".
-ast_html_node_(list(type(_, bullet(_), Mode), Items, Attrs)) -->
+ast_html_node_(list(type(_, bullet(_), Mode, _), Items, Attrs)) -->
     { attrs_html(Attrs, AttrsHtml) },    
     "<ul", AttrsHtml, ">",
     ast_html_node_items_(Items, Mode),
     "</ul>".
+ast_html_node_(list(type(_, decimal(_), Mode, OrdStart), Items, Attrs)) -->
+    { attrs_html(["start"-OrdStart|Attrs], AttrsHtml) },    
+    "<ol", AttrsHtml, ">",
+    ast_html_node_items_(Items, Mode),
+    "</ol>".
 ast_html_node_(code(Spec, Code, Attrs)) -->
     { dif(Spec, "=html"), phrase(escape_html_(Html), Code) },
     { attrs_html(Attrs, AttrsHtml) },    
@@ -814,3 +825,8 @@ attr_pairs([Key-Value]) -->
 
 
 look_ahead(T), [T] --> [T].
+
+number_([D|Ds]) --> digit(D), number_(Ds).
+number_([D])    --> digit(D).
+
+digit(D) --> [D], { char_type(D, decimal_digit) }.

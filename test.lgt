@@ -79,14 +79,16 @@ test(blockquote) :-
     djota:djot("> This is a block quote.\nAnd lazy", "<blockquote><p>This is a block quote. And lazy</p></blockquote>").
 
 test(list_ast) :-
-    djota:djot_ast("- Hola", [list(type(0, bullet("-"), tight),[item([paragraph([str("Hola")], [])])], [])]),
-    djota:djot_ast("- Hola\n- Adios", [list(type(0,bullet("-"),tight),[item([paragraph([str("Hola")],[])]),item([paragraph([str("Adios")],[])])],[])]),
-    djota:djot_ast("- Hola\namigos\n- Adios\namigos", [list(type(0,bullet("-"),tight),[item([paragraph([str("Hola amigos")], [])]),item([paragraph([str("Adios amigos")], [])])], [])]),
-    djota:djot_ast("- Hola\namigos\n\n- Adios\namigos", [list(type(0,bullet("-"),loose),[item([paragraph([str("Hola amigos")], [])]),item([paragraph([str("Adios amigos")], [])])], [])]),    
-    djota:djot_ast("- Hola\namigos\n\n - Sublist\n- Adios\namigos", [list(type(0, bullet("-"), loose),[item([paragraph([str("Hola amigos")], []),list(type(0, bullet("-"), tight),[item([paragraph([str("Sublist")], [])])], [])]),item([paragraph([str("Adios amigos")], [])])], [])]).
+    djota:djot_ast("- Hola", [list(type(0, bullet("-"), tight,""),[item([paragraph([str("Hola")], [])])], [])]),
+    djota:djot_ast("- Hola\n- Adios", [list(type(0,bullet("-"),tight,""),[item([paragraph([str("Hola")],[])]),item([paragraph([str("Adios")],[])])],[])]),
+    djota:djot_ast("- Hola\namigos\n- Adios\namigos", [list(type(0,bullet("-"),tight,""),[item([paragraph([str("Hola amigos")], [])]),item([paragraph([str("Adios amigos")], [])])], [])]),
+    djota:djot_ast("- Hola\namigos\n\n- Adios\namigos", [list(type(0,bullet("-"),loose,""),[item([paragraph([str("Hola amigos")], [])]),item([paragraph([str("Adios amigos")], [])])], [])]),    
+    djota:djot_ast("- Hola\namigos\n\n - Sublist\n- Adios\namigos", [list(type(0, bullet("-"), loose,""),[item([paragraph([str("Hola amigos")], []),list(type(0, bullet("-"), tight,""),[item([paragraph([str("Sublist")], [])])], [])]),item([paragraph([str("Adios amigos")], [])])], [])]),
+    djota:djot_ast("3. Hola\n7. Adios", [list(type(0,decimal("."),tight,"3"),[item([paragraph([str("Hola")],[])]),item([paragraph([str("Adios")],[])])],[])]).
 
 test(list) :-
-    djota:djot("- Hola\namigos\n\n - Sublist\n- Adios\namigos", "<ul><li><p>Hola amigos</p><ul><li>Sublist</li></ul></li><li><p>Adios amigos</p></li></ul>").
+    djota:djot("- Hola\namigos\n\n - Sublist\n- Adios\namigos", "<ul><li><p>Hola amigos</p><ul><li>Sublist</li></ul></li><li><p>Adios amigos</p></li></ul>"),
+    djota:djot("3. Hola\n7. Adios", "<ol start=\"3\"><li>Hola</li><li>Adios</li></ol>").
 
 test(code_block) :-
     djota:djot("````\nThis is how you do a code block:\n\n``` ruby\nx = 5 * 6\n```\n````", "<pre><code>\nThis is how you do a code block:\n\n``` ruby\nx = 5 * 6\n```</pre></code>"),
