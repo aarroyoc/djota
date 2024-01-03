@@ -5,12 +5,6 @@ jobs:
   test:
     runs-on: ubuntu-22.04
     steps:
-      - name: Install Rust cargo
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          components: cargo
       - name: Checkout
         uses: actions/checkout@v3
       - name: Checkout Scryer Prolog
@@ -26,6 +20,6 @@ jobs:
       - name: Install Logtalk
         uses: logtalk-actions/setup-logtalk@master
         with:
-          logtalk-version: latest
+          logtalk-version: 3.70.0
       - name: Execute tests
         run: logtalk_tester -p scryer
