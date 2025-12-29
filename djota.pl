@@ -391,7 +391,7 @@ ast_html_node_(list(type(_, decimal(_), Mode, OrdStart), Items, Attrs)) -->
 ast_html_node_(code(Spec, Code, Attrs)) -->
     { dif(Spec, "=html"), phrase(escape_html_(Html), Code) },
     { attrs_html(Attrs, AttrsHtml) },    
-    "<pre", AttrsHtml, "><code>", Html, "</pre></code>".
+    "<pre", AttrsHtml, "><code>", Html, "</code></pre>".
 ast_html_node_(code("=html", Html, _)) -->
     Html.
 ast_html_node_(div_block(Block, Attrs)) -->

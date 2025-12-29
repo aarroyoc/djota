@@ -93,9 +93,9 @@ test("list", (
     djota:djot("3. Hola\n7. Adios", "<ol start=\"3\"><li>Hola</li><li>Adios</li></ol>"))).
 
 test("code_block", (
-    djota:djot("````\nThis is how you do a code block:\n\n``` ruby\nx = 5 * 6\n```\n````", "<pre><code>\nThis is how you do a code block:\n\n``` ruby\nx = 5 * 6\n```</pre></code>"),
-    djota:djot("> ```\n> code in a\n> block quote\n\nParagraph.", "<blockquote><pre><code>\ncode in a\nblock quote</pre></code></blockquote><p>Paragraph.</p>"),
-    djota:djot("````\nThis is <html></html>````", "<pre><code>\nThis is &lt;html&gt;&lt;/html&gt;````</pre></code>"))).
+    djota:djot("````\nThis is how you do a code block:\n\n``` ruby\nx = 5 * 6\n```\n````", "<pre><code>\nThis is how you do a code block:\n\n``` ruby\nx = 5 * 6\n```</code></pre>"),
+    djota:djot("> ```\n> code in a\n> block quote\n\nParagraph.", "<blockquote><pre><code>\ncode in a\nblock quote</code></pre></blockquote><p>Paragraph.</p>"),
+    djota:djot("````\nThis is <html></html>````", "<pre><code>\nThis is &lt;html&gt;&lt;/html&gt;````</code></pre>"))).
 
 test("raw_block", (
          djota:djot("``` =html\n<video width=320 height=240 controls>\n</video>\n```", "\n<video width=320 height=240 controls>\n</video>"))).
