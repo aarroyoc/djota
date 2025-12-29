@@ -1,3 +1,3 @@
 .PHONY: test
 test:
-	logtalk_tester -p scryer
+	scryer-prolog -f tests.pl -g run_tests

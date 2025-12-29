@@ -3,12 +3,12 @@ on: [push]
 
 jobs:
   test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Checkout Scryer Prolog
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: mthom/scryer-prolog
           path: scryer-prolog
@@ -17,9 +17,5 @@ jobs:
         working-directory: scryer-prolog
       - name: Install Scryer Prolog
         run: sudo cp scryer-prolog/target/release/scryer-prolog /usr/bin/scryer-prolog
-      - name: Install Logtalk
-        uses: logtalk-actions/setup-logtalk@master
-        with:
-          logtalk-version: 3.70.0
       - name: Execute tests
-        run: logtalk_tester -p scryer
+        run: make test
