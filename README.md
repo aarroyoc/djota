@@ -52,3 +52,11 @@ Supported stuff:
 * Raw blocks
 * Divs
 * Tables
+
+## CLI Usage
+
+There's a small wrapper to use Djota directly from the CLI. You need to pass a file as an argument and the wrapper will output the HTML to a stdout, which you can redirect to a file under most shells.
+
+```
+scryer-prolog djota-cli.pl -- FILE.dj > FILE.html
+```
